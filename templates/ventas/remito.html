@@ -1,0 +1,45 @@
+
+{% extends "base.html" %}
+{% block title %}Remito {{ orden.numero_interno }}{% endblock %}
+{% block content %}
+<div class="card shadow-sm border-0">
+    <div class="card-body p-5">
+        <div class="text-center mb-4">
+            <h2>REMITO INTERNO</h2>
+            <p class="text-muted">Orden N° {{ orden.numero_interno }}</p>
+        </div>
+        <div class="row mb-4">
+            <div class="col-6">
+                <h6>Cliente:</h6>
+                <p>{{ orden.destinatario_nombre or orden.cliente_nombre }}</p>
+                <p>{{ orden.destinatario_calle }} {{ orden.destinatario_localidad }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <h6>Fecha:</h6>
+                <p>{{ orden.fecha }}</p>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Producto</th><th>Cantidad</th></tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.producto_nombre }}</td>
+                    <td>{{ item.cantidad }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-5 text-center">
+            <p>Firma: _______________________</p>
+            <p class="text-muted small mt-4">Este documento es un comprobante interno. No válido como factura.</p>
+        </div>
+        <div class="text-center mt-4 d-print-none">
+            <button onclick="window.print()" class="btn btn-dark">Imprimir Remito</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+    

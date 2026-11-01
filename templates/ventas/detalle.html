@@ -6,11 +6,6 @@
   .ticket-title { font-size: 1rem; font-weight: 600; color: #4b5563; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
   .info-label { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
   .info-value { font-size: 1rem; font-weight: 500; color: #111827; }
-  
-  /* Ocultar flechitas del input type number */
-  input[type=number]::-webkit-inner-spin-button, 
-  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number] { -moz-appearance: textfield; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -25,6 +20,7 @@
     </div>
     <div class="d-flex gap-2">
         <a href="{{ url_for('ventas_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+        <a href="{{ url_for('ventas_remito', id=orden.id) }}" target="_blank" class="btn btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Remito</a>
         <a href="{{ url_for('ventas_imprimir', id=orden.id) }}" target="_blank" class="btn btn-outline-dark"><i class="bi bi-printer"></i> Imprimir / PDF</a>
     </div>
 </div>
@@ -66,7 +62,7 @@
 
             {% if orden.estado != 'cancelado' %}
             <div class="mt-3 p-3 bg-light rounded border">
-                <form method="post" action="{{ url_for('ventas_agregar_item', id=orden.id) }}" class="row g-2 align-items-end" enctype="multipart/form-data">
+                <form method="post" action="{{ url_for('ventas_agregar_item', id=orden.id) }}" class="row g-2 align-items-end">
                     <div class="col-md-6">
                         <select name="producto_id" class="form-select form-select-sm" required>
                             <option value="">Añadir producto...</option>
@@ -75,11 +71,9 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <!-- CANTIDAD ENTERA -->
                     <div class="col-md-2">
                         <input type="number" step="1" min="1" name="cantidad" class="form-control form-control-sm text-center" value="1" required>
                     </div>
-                    <!-- PRECIO FIJO (READONLY) -->
                     <div class="col-md-2">
                         <input type="number" step="0.01" name="precio" class="form-control form-control-sm bg-light fw-bold" readonly required>
                     </div>
@@ -93,26 +87,8 @@
         <div class="ticket-card">
             <div class="ticket-title">Enviar email al cliente</div>
             <div class="d-flex flex-wrap gap-2">
-                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='confirmacion') }}" class="d-inline">
+                <form method="post" action="{{ url_for('ventas_enviar_orden_correo', id=orden.id) }}" class="d-inline">
                     <button type="submit" class="btn btn-outline-primary btn-sm">Enviar orden</button>
-                </form>
-                
-                {% if orden.estado == 'pendiente_pago' %}
-                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='pago') }}" class="d-inline" onsubmit="return confirm('Al notificar el pago, la orden pasará a Pagado/Sin enviar. ¿Continuar?')">
-                    <button type="submit" class="btn btn-outline-success btn-sm">Notificar pago</button>
-                </form>
-                {% elif orden.estado == 'pagado_sin_enviar' %}
-                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='envio') }}" class="d-inline" onsubmit="return confirm('Al notificar el envío, la orden pasará a Pagado/Enviado. ¿Continuar?')">
-                    <button type="submit" class="btn btn-outline-info btn-sm">Notificar envío</button>
-                </form>
-                {% elif orden.estado == 'pagado_enviado' %}
-                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='entrega') }}" class="d-inline">
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Notificar entrega</button>
-                </form>
-                {% endif %}
-                
-                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='factura') }}" class="d-inline">
-                    <button type="submit" class="btn btn-outline-dark btn-sm">Enviar factura</button>
                 </form>
             </div>
         </div>
@@ -128,90 +104,138 @@
             <div class="d-flex justify-content-between align-items-center"><span class="fw-bold">Total</span><span class="fw-bold fs-4 text-success">{{ orden.total|pesos }}</span></div>
         </div>
 
-        <!-- COMENTARIOS Y FACTURACION -->
+        <!-- FACTURACIÓN -->
         <div class="ticket-card">
-            <div class="ticket-title">Comentarios y Facturación</div>
+            <div class="ticket-title">Facturación</div>
+            
             <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}" enctype="multipart/form-data">
-                <input type="hidden" name="accion" value="actualizar_admin">
+                <input type="hidden" name="accion" value="actualizar_factura">
                 
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Comentarios / Notas para el cliente</label>
-                    <textarea name="notas" class="form-control form-control-sm" rows="2" placeholder="Ej: Entregar por la tarde, dejar en portería...">{{ orden.notas or '' }}</textarea>
-                </div>
-                
-                <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <label class="form-label small fw-bold text-muted">Requiere Factura</label>
-                        <select name="requiere_factura" class="form-select form-select-sm">
-                            <option value="no" {% if not orden.requiere_factura %}selected{% endif %}>No</option>
-                            <option value="si" {% if orden.requiere_factura %}selected{% endif %}>Sí</option>
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-bold text-muted">Estado Factura</label>
-                        <select name="estado_facturacion" class="form-select form-select-sm">
-                            <option value="no_requiere" {% if orden.estado_facturacion=='no_requiere' %}selected{% endif %}>No requiere</option>
-                            <option value="pendiente" {% if orden.estado_facturacion=='pendiente' %}selected{% endif %}>Falta Facturar</option>
-                            <option value="facturada" {% if orden.estado_facturacion=='facturada' %}selected{% endif %}>Facturada</option>
-                        </select>
-                    </div>
+                    <label class="form-label small fw-bold text-muted">Requiere Factura</label>
+                    <select name="requiere_factura" id="select-requiere-factura" class="form-select form-select-sm" onchange="toggleFacturaForm()">
+                        <option value="0" {% if not orden.requiere_factura or orden.requiere_factura == 0 or orden.requiere_factura == '0' %}selected{% endif %}>No requiere</option>
+                        <option value="1" {% if orden.requiere_factura == 1 or orden.requiere_factura == '1' %}selected{% endif %}>Sí requiere</option>
+                    </select>
                 </div>
 
-                <div class="mb-2">
-                    <label class="form-label small fw-bold text-muted">Subir Factura (PDF/Foto)</label>
-                    <input type="file" name="archivo_factura" class="form-control form-control-sm">
-                    {% if orden.archivo_factura %}
-                    <div class="small text-success mt-1"><i class="bi bi-check-circle-fill"></i> Factura cargada: <a href="/uploads/{{ orden.archivo_factura }}" target="_blank">Ver Archivo</a></div>
-                    {% endif %}
+                <div id="div-factura-form" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Estado</label>
+                        <select name="estado_facturacion" id="select-estado-factura" class="form-select form-select-sm" onchange="toggleSubirFactura()">
+                            <option value="pendiente" {% if orden.estado_facturacion == 'pendiente' or not orden.estado_facturacion %}selected{% endif %}>Facturar (Pendiente)</option>
+                            <option value="facturada" {% if orden.estado_facturacion == 'facturada' %}selected{% endif %}>Facturado</option>
+                        </select>
+                    </div>
+
+                    <div id="div-subir-factura" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Subir Factura (PDF/Foto)</label>
+                            <input type="file" name="archivo_factura" class="form-control form-control-sm">
+                            {% if orden.archivo_factura %}
+                            <div class="small text-success mt-1"><i class="bi bi-check-circle-fill"></i> <a href="/uploads/{{ orden.archivo_factura }}" target="_blank">Ver Factura Cargada</a></div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
                 
-                <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Guardar Datos</button>
+                <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Guardar Facturación</button>
             </form>
+            
+            <div id="div-enviar-factura" style="display: none; margin-top: 10px;">
+                <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}">
+                    <input type="hidden" name="accion" value="enviar_factura">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Enviar Factura por Correo</button>
+                </form>
+            </div>
         </div>
 
-        <!-- PAGOS Y COMPROBANTES -->
+        <!-- PAGOS -->
         <div class="ticket-card">
-            <div class="ticket-title">Registrar Pago</div>
-            <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}" enctype="multipart/form-data">
-                <input type="hidden" name="accion" value="registrar_pago">
-                
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label small fw-bold text-muted">Monto del Pago</label>
-                        <input type="number" step="0.01" name="monto_pago" class="form-control form-control-sm" placeholder="$ 0.00" required>
+            <div class="ticket-title">Pagos <span class="badge bg-danger ms-2">Saldo: ${{ '{:,.2f}'.format(saldo_pendiente) }}</span></div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="chk-pago-parcial" onchange="togglePagoForm()">
+                <label class="form-check-label fw-bold" for="chk-pago-parcial">
+                    Hizo pago parcial / total
+                </label>
+            </div>
+
+            <div id="div-pago-form" style="display: none;">
+                <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="accion" value="registrar_pago">
+                    
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Monto</label>
+                            <input type="number" step="0.01" name="monto_pago" class="form-control form-control-sm" placeholder="$ 0.00" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Medio</label>
+                            <select name="medio_pago" class="form-select form-select-sm" required>
+                                <option value="">Elegir...</option>
+                                {% for m in medios %}
+                                <option value="{{ m.id }}">{{ m.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-bold text-muted">Tipo</label>
-                        <select name="tipo_pago" class="form-select form-select-sm">
-                            <option value="parcial">Pago Parcial</option>
-                            <option value="total">Pago Total</option>
-                        </select>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Comprobante (Opcional)</label>
+                        <input type="file" name="archivo_comprobante" class="form-control form-control-sm">
                     </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Subir Comprobante (Transf, MP, etc)</label>
-                    <input type="file" name="archivo_comprobante" class="form-control form-control-sm" required>
-                </div>
-                
-                <button type="submit" class="btn btn-sm btn-success w-100">Cargar Pago</button>
-            </form>
+                    
+                    <button type="submit" class="btn btn-sm btn-success w-100">Guardar Pago</button>
+                </form>
+            </div>
+
+            {% if pagos %}
+            <div class="mt-3 pt-3 border-top">
+                <p class="small text-muted mb-2">Pagos:</p>
+                <ul class="list-unstyled mb-3">
+                    {% for p in pagos %}
+                    <li class="small mb-1">
+                        <i class="bi bi-check2-circle text-success"></i> {{ p.fecha }} - ${{ '{:,.2f}'.format(p.monto) }} ({{ p.medio_nombre }})
+                        {% if p.notas %}<a href="/uploads/{{ p.notas }}" target="_blank" class="ms-1"><i class="bi bi-paperclip"></i></a>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}">
+                    <input type="hidden" name="accion" value="notificar_pago">
+                    <button type="submit" class="btn btn-sm btn-outline-success w-100">Notificar Pago al Cliente por Correo</button>
+                </form>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- ESTADO ESTRICTO CON BOTONES -->
+        <!-- ESTADO -->
         <div class="ticket-card">
             <div class="ticket-title">Avanzar Estado</div>
             <div class="d-grid gap-2">
                 {% if orden.estado == 'pendiente_pago' %}
-                <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
-                    <input type="hidden" name="estado" value="pagado_sin_enviar">
-                    <button class="btn btn-success w-100" onclick="return confirm('¿Confirmás que el pago fue recibido? Se descontará stock.')">Marcar como PAGADO</button>
-                </form>
+                    {% if saldo_pendiente <= 0 %}
+                        <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
+                            <input type="hidden" name="estado" value="pagado_sin_enviar">
+                            <button class="btn btn-success w-100" onclick="return confirm('¿Confirmás el pago TOTAL?')">Marcar como PAGADO (Total)</button>
+                        </form>
+                    {% elif total_pagado > 0 %}
+                        <div class="alert alert-warning py-1 text-center small mb-0">Pago Parcial Registrado</div>
+                        <form method="post" action="{{ url_for('ventas_forzar_despacho', id=orden.id) }}">
+                            <button class="btn btn-warning text-dark w-100" onclick="return confirm('¿Despachar con saldo pendiente?')">Despachar (Pago Parcial)</button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary w-100" disabled>Debe registrar un pago</button>
+                    {% endif %}
                 {% elif orden.estado == 'pagado_sin_enviar' %}
-                <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
-                    <input type="hidden" name="estado" value="pagado_enviado">
-                    <button class="btn btn-info text-white w-100" onclick="return confirm('¿Confirmás que el pedido fue enviado?')">Marcar como ENVIADO</button>
-                </form>
+                    {% if total_pagado > 0 %}
+                        <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
+                            <input type="hidden" name="estado" value="pagado_enviado">
+                            <button class="btn btn-info text-white w-100" onclick="return confirm('¿Confirmás el envío?')">Marcar como ENVIADO</button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary w-100" disabled>Debe registrar pago</button>
+                    {% endif %}
                 {% endif %}
                 
                 {% if orden.estado != 'cancelado' %}
@@ -225,31 +249,119 @@
 
         <!-- ENVIO -->
         <div class="ticket-card">
-            <div class="ticket-title">Envío</div>
+            <div class="ticket-title d-flex justify-content-between align-items-center">
+                <span>Envío</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btn-edit-envio" onclick="toggleEditEnvio()">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+            </div>
+            
             <form method="post" action="{{ url_for('ventas_envio', id=orden.id) }}">
-                <div class="mb-2"><input name="destinatario_nombre" class="form-control form-control-sm" value="{{ orden.destinatario_nombre or orden.cliente_nombre }}" placeholder="Destinatario"></div>
-                <div class="mb-2"><input name="destinatario_calle" class="form-control form-control-sm" value="{{ orden.destinatario_calle or '' }}" placeholder="Dirección"></div>
-                <div class="row g-2 mb-2">
-                    <div class="col-6"><input name="destinatario_localidad" class="form-control form-control-sm" value="{{ orden.destinatario_localidad or '' }}" placeholder="Localidad"></div>
-                    <div class="col-6"><input name="destinatario_provincia" class="form-control form-control-sm" value="{{ orden.destinatario_provincia or '' }}" placeholder="Provincia"></div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Destinatario</label>
+                        <input name="destinatario_nombre" class="form-control form-control-sm envio-field" value="{{ orden.destinatario_nombre or orden.cliente_nombre }}" readonly>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Transportista</label>
+                        <select name="transportista_id" class="form-select form-select-sm envio-field" disabled>
+                            <option value="">Sin transportista</option>
+                            {% for t in transportistas %}<option value="{{ t.id }}" {% if orden.transportista_id==t.id %}selected{% endif %}>{{ t.nombre }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Dirección</label>
+                        <input name="destinatario_calle" class="form-control form-control-sm envio-field" value="{{ orden.destinatario_calle or '' }}" readonly>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Localidad</label>
+                        <input name="destinatario_localidad" class="form-control form-control-sm envio-field" value="{{ orden.destinatario_localidad or '' }}" readonly>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Provincia</label>
+                        <input name="destinatario_provincia" class="form-control form-control-sm envio-field" value="{{ orden.destinatario_provincia or '' }}" readonly>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-0">Nro Guía</label>
+                        <input name="nro_guia" class="form-control form-control-sm envio-field" value="{{ orden.nro_guia or '' }}" readonly>
+                    </div>
                 </div>
-                <div class="mb-2"><select name="transportista_id" class="form-select form-select-sm"><option value="">Transportista...</option>{% for t in transportistas %}<option value="{{ t.id }}" {% if orden.transportista_id==t.id %}selected{% endif %}>{{ t.nombre }}</option>{% endfor %}</select></div>
-                <div class="mb-2"><input name="nro_guia" class="form-control form-control-sm" value="{{ orden.nro_guia or '' }}" placeholder="Nro Guía"></div>
-                <button class="btn btn-dark btn-sm w-100">Guardar Envío</button>
+                
+                <div class="mt-2 d-none" id="btn-save-envio">
+                    <button class="btn btn-dark btn-sm w-100">Guardar Cambios de Envío</button>
+                </div>
+            </form>
+
+            <!-- Link de seguimiento -->
+            {% if orden.nro_guia and orden.transportista_id %}
+                {% for t in transportistas %}
+                    {% if t.id == orden.transportista_id and t.url_seguimiento %}
+                        <div class="mt-2 text-center">
+                            <a href="{{ t.url_seguimiento.replace('{guia}', orden.nro_guia) }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-box-arrow-up-right"></i> Seguir Envío
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- NOTAS Y TERMINOS -->
+        <div class="ticket-card">
+            <div class="ticket-title">Términos y Condiciones (Manual)</div>
+            <form method="post" action="{{ url_for('ventas_detalle', id=orden.id) }}">
+                <input type="hidden" name="accion" value="actualizar_notas">
+                <textarea name="notas" class="form-control form-control-sm mb-2" rows="3" placeholder="Escribe aquí los términos que se enviarán en el correo de la orden...">{{ orden.notas or '' }}</textarea>
+                <button type="submit" class="btn btn-sm btn-outline-dark w-100">Guardar Notas</button>
             </form>
         </div>
-    </div>
+
+        </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const selectProd = document.querySelector('select[name="producto_id"]');
     if (selectProd) {
         selectProd.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
-            // Al cambiar el producto, setea el precio automáticamente en el input readonly
             if (opt.dataset.precio) this.closest('form').querySelector('input[name="precio"]').value = opt.dataset.precio;
         });
     }
+    toggleFacturaForm();
+    togglePagoForm();
 });
+
+function toggleFacturaForm() {
+    const val = document.getElementById('select-requiere-factura').value;
+    const divForm = document.getElementById('div-factura-form');
+    if (val === '1') {
+        divForm.style.display = 'block';
+        toggleSubirFactura();
+    } else {
+        divForm.style.display = 'none';
+    }
+}
+
+function toggleSubirFactura() {
+    const val = document.getElementById('select-estado-factura').value;
+    const divSubir = document.getElementById('div-subir-factura');
+    const divEnviar = document.getElementById('div-enviar-factura');
+    const tieneArchivo = "{{ orden.archivo_factura }}" !== "None" && "{{ orden.archivo_factura }}" !== "";
+
+    if (val === 'facturada') {
+        divSubir.style.display = 'block';
+        if (tieneArchivo) { divEnviar.style.display = 'block'; } else { divEnviar.style.display = 'none'; }
+    } else {
+        divSubir.style.display = 'none';
+        divEnviar.style.display = 'none';
+    }
+}
+
+function togglePagoForm() {
+    const isChecked = document.getElementById('chk-pago-parcial').checked;
+    const divForm = document.getElementById('div-pago-form');
+    if (isChecked) { divForm.style.display = 'block'; } else { divForm.style.display = 'none'; }
+}
 </script>
 {% endblock %}
