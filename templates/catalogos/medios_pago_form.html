@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Editar medio de pago{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Editar medio de pago</h4>
+<div class="text-muted small">Cambia el nombre o la comision</div>
+</div>
+<a href="{{ url_for('medios_pago_gestionar') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="mb-3">
+<label class="form-label">Nombre *</label>
+<input name="nombre" class="form-control" required value="{{ medio.nombre }}">
+</div>
+<div class="mb-3">
+<label class="form-label">% Comision</label>
+<input type="number" step="0.01" min="0" name="comision_pct" class="form-control" value="{{ medio.comision_pct or 0 }}">
+<div class="form-text">
+Porcentaje que cobra este medio sobre el monto. Ejemplos:
+<ul class="mb-0 mt-1 ps-3" style="font-size:.78rem;">
+<li>Efectivo / Transferencia: <strong>0</strong></li>
+<li>Tarjeta de debito: <strong>1.5</strong></li>
+<li>Tarjeta de credito: <strong>2.5</strong></li>
+<li>Mercado Pago: <strong>3.5</strong></li>
+<li>QR: <strong>0.8</strong></li>
+</ul>
+</div>
+</div>
+<div class="d-flex gap-2 mt-4">
+<button type="submit" class="btn btn-dark">Guardar cambios</button>
+<a href="{{ url_for('medios_pago_gestionar') }}" class="btn btn-outline-secondary">Cancelar</a>
+</div>
+</form>
+</div></div>
+</div>
+</div>
+{% endblock %}

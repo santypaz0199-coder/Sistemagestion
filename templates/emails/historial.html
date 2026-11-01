@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Emails{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Historial de emails enviados</h4>
+<div class="text-muted small">Ultimos 300 envios</div>
+</div>
+<a href="{{ url_for('campanas_lista') }}" class="btn btn-outline-dark"><i class="bi bi-megaphone"></i> Campañas</a>
+<a href="{{ url_for('emails_nuevo') }}" class="btn btn-dark"><i class="bi bi-pencil-square"></i> Redactar correo</a>
+</div>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light">
+<tr><th>Fecha</th><th>Orden</th><th>Tipo</th><th>Remitente</th><th>Destinatario</th><th>Asunto</th><th>Estado</th></tr>
+</thead>
+<tbody>
+{% for e in emails %}
+<tr>
+<td class="small">{{ e.fecha }}</td>
+<td class="small">{{ e.numero_interno or '-' }}</td>
+<td><span class="badge bg-secondary">{{ e.tipo }}</span></td>
+<td class="small text-muted">{{ e.remitente or '—' }}</td>
+<td class="small">{{ e.destinatario }}</td>
+<td class="small">{{ e.asunto }}</td>
+<td>{% if e.estado=='ok' %}<span class="badge bg-success">OK</span>{% else %}<span class="badge bg-danger">Error</span>{% endif %}</td>
+</tr>
+{% else %}
+<tr><td colspan="7" class="text-center text-muted py-4">Sin emails enviados.</td></tr>
+{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

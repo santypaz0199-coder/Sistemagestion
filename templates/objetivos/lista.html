@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Objetivos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<div>
+<h4 class="mb-1">Objetivos</h4>
+<div class="text-muted small">Metas mensuales global, por vendedor y por canal</div>
+</div>
+<form class="d-flex gap-2">
+<input type="hidden" name="tab" value="{{ tab }}">
+<select name="mes" class="form-select form-select-sm" onchange="this.form.submit()">
+{% for i in range(1, 13) %}<option value="{{ i }}" {% if mes == i %}selected{% endif %}>{{ MESES[i] }}</option>{% endfor %}
+</select>
+<select name="anio" class="form-select form-select-sm" onchange="this.form.submit()">
+{% for a in range(2024, 2031) %}<option value="{{ a }}" {% if anio == a %}selected{% endif %}>{{ a }}</option>{% endfor %}
+</select>
+</form>
+</div>
+
+<ul class="nav nav-pills mb-3">
+<li class="nav-item"><a class="nav-link {% if tab=='global' %}active{% endif %}" href="{{ url_for('objetivos_lista', mes=mes, anio=anio, tab='global') }}"><i class="bi bi-globe"></i> Global</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='vendedores' %}active{% endif %}" href="{{ url_for('objetivos_lista', mes=mes, anio=anio, tab='vendedores') }}"><i class="bi bi-people"></i> Vendedores</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='canales' %}active{% endif %}" href="{{ url_for('objetivos_lista', mes=mes, anio=anio, tab='canales') }}"><i class="bi bi-broadcast"></i> Canales</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='fijos' %}active{% endif %}" href="{{ url_for('objetivos_gastos_fijos', mes=mes, anio=anio) }}"><i class="bi bi-wallet2"></i> Gastos fijos</a></li>
+</ul>
+
+{% if tab == 'global' %}
+<div class="card shadow-sm mb-3" style="border-left:4px solid #3b5bdb;">
+<div class="card-body">
+<h6 class="mb-1"><i class="bi bi-globe"></i> Objetivo global de {{ mes_label }} {{ anio }}</h6>
+<div class="text-muted small mb-3">Meta de facturacion total</div>
+<div class="row g-3 align-items-center">
+<div class="col-md-5">
+<form method="post" action="{{ url_for('objetivos_global') }}" class="input-group">
+<input type="hidden" name="mes" value="{{ mes }}">
+<input type="hidden" name="anio" value="{{ anio }}">
+<span class="input-group-text">$</span>
+<input type="number" step="0.01" min="0" name="monto" class="form-control" value="{{ objetivo_global or '' }}" placeholder="0">
+<button class="btn btn-dark">Guardar</button>
+</form>
+</div>
+<div class="col-md-7">
+{% if objetivo_global > 0 %}
+<div class="d-flex justify-content-between mb-1">
+<span class="small">Facturado: <strong>${{ '{:,.0f}'.format(facturado_global).replace(',', '.') }}</strong></span>
+<span class="small fw-semibold">{{ '%.1f'|format(pct_global) }}%</span>
+</div>
+<div class="progress-fz {% if pct_global >= 75 %}p-ok{% elif pct_global >= 50 %}p-warn{% else %}p-low{% endif %}">
+<div class="progress-bar" style="width:{{ [pct_global, 100]|min }}%"></div>
+</div>
+<div class="mt-1 small text-muted">
+{% if pct_global >= 100 %}Objetivo cumplido
+{% else %}Faltan <strong>${{ '{:,.0f}'.format(objetivo_global - facturado_global).replace(',', '.') }}</strong>{% endif %}
+</div>
+{% else %}<p class="text-muted small mb-0">Sin objetivo cargado.</p>{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+{% elif tab == 'vendedores' %}
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-people"></i> Objetivos por vendedor</h6>
+{% if filas_v %}
+<table class="table align-middle mb-0">
+<thead class="table-light"><tr><th>Vendedor</th><th style="width:220px;">Objetivo</th><th>Progreso</th><th class="text-end">Cumplimiento</th></tr></thead>
+<tbody>
+{% for f in filas_v %}
+<tr>
+<td><div class="fw-semibold">{{ f.usuario.nombre }}</div><div class="small text-muted">{{ f.usuario.email }}</div></td>
+<td>
+<form method="post" action="{{ url_for('objetivos_vendedor', uid=f.usuario.id) }}" class="input-group input-group-sm">
+<input type="hidden" name="mes" value="{{ mes }}"><input type="hidden" name="anio" value="{{ anio }}">
+<span class="input-group-text">$</span>
+<input type="number" step="0.01" min="0" name="monto" class="form-control" value="{{ f.objetivo or '' }}" placeholder="0">
+<button class="btn btn-outline-dark">OK</button>
+</form>
+</td>
+<td>
+{% if f.objetivo > 0 %}
+<div class="small mb-1">${{ '{:,.0f}'.format(f.facturado).replace(',', '.') }} / ${{ '{:,.0f}'.format(f.objetivo).replace(',', '.') }}</div>
+<div class="progress-fz {% if f.pct >= 75 %}p-ok{% elif f.pct >= 50 %}p-warn{% else %}p-low{% endif %}">
+<div class="progress-bar" style="width:{{ [f.pct, 100]|min }}%"></div>
+</div>
+{% if f.gap > 0 %}<div class="small text-muted mt-1">Faltan ${{ '{:,.0f}'.format(f.gap).replace(',', '.') }}</div>{% endif %}
+{% else %}<span class="text-muted small">Sin objetivo</span>{% endif %}
+</td>
+<td class="text-end fw-semibold">{% if f.objetivo > 0 %}{{ '%.1f'|format(f.pct) }}%{% else %}—{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table>
+{% else %}<p class="text-muted small mb-0">No hay vendedores activos.</p>{% endif %}
+</div></div>
+
+{% elif tab == 'canales' %}
+<div class="card shadow-sm"><div class="card-body">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h6 class="mb-1"><i class="bi bi-broadcast"></i> Objetivos por canal</h6>
+<a href="{{ url_for('canales_gestionar') }}" class="btn btn-sm btn-outline-secondary mt-1"><i class="bi bi-gear"></i> Gestionar canales</a>
+<div class="small text-muted">Total: <strong>${{ '{:,.0f}'.format(total_obj_canal).replace(',', '.') }}</strong> objetivo · <strong>${{ '{:,.0f}'.format(total_fac_canal).replace(',', '.') }}</strong> facturado</div>
+</div>
+</div>
+<form method="post" action="{{ url_for('objetivos_canal_guardar') }}">
+<input type="hidden" name="mes" value="{{ mes }}">
+<input type="hidden" name="anio" value="{{ anio }}">
+<table class="table align-middle mb-3">
+<thead class="table-light"><tr><th>Canal</th><th style="width:200px;">Objetivo</th><th>Progreso</th><th class="text-end">Cumplimiento</th></tr></thead>
+<tbody>
+{% for f in filas_c %}
+<tr>
+<td class="fw-semibold">{{ f.canal.nombre }}</td>
+<td>
+<div class="input-group input-group-sm">
+<span class="input-group-text">$</span>
+<input type="number" step="0.01" min="0" name="monto_canal_{{ f.canal.id }}" class="form-control" value="{{ f.objetivo or '' }}" placeholder="0">
+</div>
+</td>
+<td>
+{% if f.objetivo > 0 %}
+<div class="small mb-1">${{ '{:,.0f}'.format(f.facturado).replace(',', '.') }} / ${{ '{:,.0f}'.format(f.objetivo).replace(',', '.') }}</div>
+<div class="progress-fz {% if f.pct >= 75 %}p-ok{% elif f.pct >= 50 %}p-warn{% else %}p-low{% endif %}">
+<div class="progress-bar" style="width:{{ [f.pct, 100]|min }}%"></div>
+</div>
+{% if f.gap > 0 %}<div class="small text-muted mt-1">Faltan ${{ '{:,.0f}'.format(f.gap).replace(',', '.') }}</div>{% endif %}
+{% else %}<span class="text-muted small">Sin objetivo</span>{% endif %}
+</td>
+<td class="text-end fw-semibold">{% if f.objetivo > 0 %}{{ '%.1f'|format(f.pct) }}%{% else %}—{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table>
+<button class="btn btn-dark">Guardar todos</button>
+</form>
+</div></div>
+{% endif %}
+{% endblock %}

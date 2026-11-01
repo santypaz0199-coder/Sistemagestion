@@ -1,0 +1,87 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Crear cuenta — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="cat-form-card">
+    <h1>Crear cuenta</h1>
+    <p class="subtitle">Registrate como mayorista. Tu cuenta debe ser aprobada antes de poder hacer pedidos.</p>
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Nombre completo *</label>
+        <input name="nombre_completo" class="form-control" required value="{{ form.get('nombre_completo', '') }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email *</label>
+        <input type="email" name="email" class="form-control" required value="{{ form.get('email', '') }}">
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Telefono</label>
+          <input name="telefono" class="form-control" value="{{ form.get('telefono', '') }}" placeholder="+54 9...">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">CUIT / CUIL</label>
+          <input name="cuit" class="form-control" value="{{ form.get('cuit', '') }}">
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Provincia *</label>
+          <input name="provincia" class="form-control" required value="{{ form.get('provincia', '') }}" placeholder="Ej: Misiones">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Localidad *</label>
+          <input name="localidad" class="form-control" required value="{{ form.get('localidad', '') }}" placeholder="Ej: Posadas">
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Calle *</label>
+          <input name="calle" class="form-control" required value="{{ form.get('calle', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Altura *</label>
+          <input name="altura" class="form-control" required value="{{ form.get('altura', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Piso</label>
+          <input name="piso" class="form-control" value="{{ form.get('piso', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Depto</label>
+          <input name="depto" class="form-control" value="{{ form.get('depto', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">CP *</label>
+          <input name="codigo_postal" class="form-control" required value="{{ form.get('codigo_postal', '') }}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contrasena * <span class="form-text">(min 6 caracteres)</span></label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Repetir contrasena *</label>
+        <input type="password" name="password2" class="form-control" required>
+      </div>
+      <div class="mb-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="terminos" id="terminos" required>
+          <label class="form-check-label" for="terminos" style="color:var(--cat-text-muted);font-size:.85rem;">
+            Acepto los terminos y condiciones
+          </label>
+        </div>
+      </div>
+      <button class="cat-btn w-100">Crear cuenta</button>
+    </form>
+
+    <p class="text-center mt-4 mb-0" style="color:var(--cat-text-muted);font-size:.9rem;">
+      Ya tenes cuenta? <a href="{{ url_for('catalogo.login') }}">Ingresa</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

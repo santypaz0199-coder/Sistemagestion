@@ -1,0 +1,157 @@
+# -*- coding: utf-8 -*-
+import os
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+
+def escribir(relpath, contenido):
+    ruta = os.path.join(BASE, relpath)
+    carpeta = os.path.dirname(ruta)
+    if carpeta:
+        os.makedirs(carpeta, exist_ok=True)
+    with open(ruta, 'w', encoding='utf-8') as f:
+        f.write(contenido)
+    print(f"[upgrade113] escrito: {relpath}")
+
+
+MI_PEDIDO_DETALLE = r'''{% extends "catalogo/base.html" %}
+{% block title %}Pedido {{ orden.numero_interno }} — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 style="font-weight:300;font-size:2.2rem;margin-bottom:.5rem;color:var(--cat-text);">Pedido {{ orden.numero_interno }}</h1>
+      <p style="color:var(--cat-text-muted); font-size:1rem;">{{ orden.fecha }}</p>
+    </div>
+    <a href="{{ url_for('catalogo.mis_pedidos') }}" style="color:var(--cat-text-muted);text-decoration:none;font-size:.95rem;border:1px solid var(--cat-border);padding:.5rem 1rem;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.color='var(--cat-accent)'; this.style.borderColor='var(--cat-accent)';" onmouseout="this.style.color='var(--cat-text-muted)'; this.style.borderColor='var(--cat-border)';"><i class="bi bi-arrow-left"></i> Volver</a>
+  </div>
+
+  <div style="background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px; padding:2rem; margin-bottom:2rem;">
+    <h6 style="color:var(--cat-text-muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em;margin-bottom:1.5rem;font-weight:600;">Productos</h6>
+    
+    <!-- TABLA OSCURA -->
+    <div style="border:1px solid var(--cat-border); border-radius:8px; overflow:hidden; margin-bottom:1.5rem;">
+      <table style="width:100%; border-collapse:collapse; margin:0; color:var(--cat-text);">
+        <thead>
+          <tr style="background:var(--cat-surface-2); border-bottom:1px solid var(--cat-border);">
+            <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem;text-align:left;font-weight:600;">Producto</th>
+            <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem;text-align:center;font-weight:600;">Cant.</th>
+            <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem;text-align:right;font-weight:600;">Precio</th>
+            <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem;text-align:right;font-weight:600;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr style="border-bottom:1px solid var(--cat-border);">
+            <td style="padding:1rem;">{{ it.producto_nombre }}</td>
+            <td style="padding:1rem;text-align:center;">{{ '%g'|format(it.cantidad) }}</td>
+            <td style="padding:1rem;text-align:right;">{{ it.precio_unitario|pesos }}</td>
+            <td style="padding:1rem;text-align:right;color:var(--cat-accent);font-weight:600;">{{ it.subtotal|pesos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot style="background:var(--cat-surface-2); border-top:1px solid var(--cat-border);">
+          <tr>
+            <td colspan="3" style="text-align:right;font-weight:600;padding:1.25rem 1rem;font-size:1.05rem;">Total</td>
+            <td style="text-align:right;font-weight:700;color:var(--cat-accent);padding:1.25rem 1rem;font-size:1.2rem;">{{ orden.total|pesos }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% if orden.notas %}
+    <div style="background:var(--cat-surface-2); padding:1rem; border-radius:8px; border-left:3px solid var(--cat-accent); margin-bottom:1.5rem;">
+      <h6 style="color:var(--cat-text-muted);text-transform:uppercase;font-size:.7rem;letter-spacing:.05em;margin-bottom:.5rem;">Notas del pedido</h6>
+      <p style="color:var(--cat-text);margin:0;font-size:.95rem;">{{ orden.notas }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ESTADO DEL PAGO -->
+  <div style="background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px; padding:2rem;">
+    <h6 style="color:var(--cat-text-muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em;margin-bottom:1.5rem;font-weight:600;">Estado del pago</h6>
+
+    {% if orden.comprobante_estado == 'aprobado' %}
+    <div class="cat-alert cat-alert-success" style="border:1px solid rgba(16,185,129,.3); background:rgba(16,185,129,.1); color:#34d399; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+      <i class="bi bi-check-circle fs-5 align-middle me-2"></i> Tu pago fue aprobado. Estamos preparando tu pedido.
+    </div>
+    {% elif orden.comprobante_estado == 'subido' %}
+    <div class="cat-alert cat-alert-info" style="border:1px solid rgba(6,182,212,.3); background:rgba(6,182,212,.1); color:#22d3ee; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+      <i class="bi bi-hourglass-split fs-5 align-middle me-2"></i> Comprobante recibido. Estamos verificando el pago. Te avisaremos por email cuando lo aprobemos.
+    </div>
+    {% if orden.comprobante_archivo %}
+    <a href="{{ url_for('catalogo.ver_mi_comprobante', id=orden.id) }}" target="_blank" style="color:var(--cat-accent);font-size:.9rem;display:inline-block;margin-bottom:1.5rem;text-decoration:none;">
+      <i class="bi bi-file-earmark-text"></i> Ver comprobante subido
+    </a>
+    {% endif %}
+    {% elif orden.comprobante_estado == 'rechazado' %}
+    <div class="cat-alert cat-alert-danger" style="border:1px solid rgba(239,68,68,.3); background:rgba(239,68,68,.1); color:#f87171; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+      <i class="bi bi-x-circle fs-5 align-middle me-2"></i> <strong>Comprobante rechazado</strong>
+      {% if orden.comprobante_motivo_rechazo %}<br>Motivo: {{ orden.comprobante_motivo_rechazo }}{% endif %}
+      <br><span style="font-size:.85rem;">Podes subir uno nuevo a continuacion.</span>
+    </div>
+    {% endif %}
+
+    {% if orden.estado == 'pendiente_pago' and orden.comprobante_estado != 'subido' %}
+    <div style="background:var(--cat-surface-2);border:1px solid var(--cat-border);border-radius:10px;padding:1.5rem;">
+      <h6 style="color:var(--cat-text);font-weight:600;margin-bottom:1rem;"><i class="bi bi-bank text-warning"></i> Datos para la transferencia</h6>
+
+      {% if not datos_pago or (not datos_pago.pago_alias and not datos_pago.pago_cbu) %}
+      <div class="cat-alert cat-alert-warning" style="margin-bottom:0; border:1px solid rgba(245,158,11,.3); background:rgba(245,158,11,.1); color:#fbbf24; padding:1rem; border-radius:8px;">
+        <i class="bi bi-exclamation-triangle"></i>
+        Los datos de transferencia aun no estan configurados.
+        <br><small>Contactanos por email y te los enviamos.</small>
+      </div>
+      {% else %}
+      <div class="row g-3 mb-4">
+        {% if datos_pago.pago_alias %}
+        <div class="col-md-6"><div style="background:var(--cat-surface);padding:.75rem;border-radius:6px;border:1px solid var(--cat-border);"><div style="color:var(--cat-text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;">Alias</div><div style="font-weight:500;font-size:1.05rem;color:var(--cat-text);">{{ datos_pago.pago_alias }}</div></div></div>
+        {% endif %}
+        {% if datos_pago.pago_cbu %}
+        <div class="col-md-6"><div style="background:var(--cat-surface);padding:.75rem;border-radius:6px;border:1px solid var(--cat-border);"><div style="color:var(--cat-text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;">CBU</div><div style="font-weight:500;font-size:.95rem;font-family:monospace;color:var(--cat-text);">{{ datos_pago.pago_cbu }}</div></div></div>
+        {% endif %}
+        {% if datos_pago.pago_titular %}
+        <div class="col-md-6"><div style="background:var(--cat-surface);padding:.75rem;border-radius:6px;border:1px solid var(--cat-border);"><div style="color:var(--cat-text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;">Titular</div><div style="font-weight:500;color:var(--cat-text);">{{ datos_pago.pago_titular }}</div></div></div>
+        {% endif %}
+        {% if datos_pago.pago_cuit %}
+        <div class="col-md-6"><div style="background:var(--cat-surface);padding:.75rem;border-radius:6px;border:1px solid var(--cat-border);"><div style="color:var(--cat-text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;">CUIT</div><div style="font-weight:500;color:var(--cat-text);">{{ datos_pago.pago_cuit }}</div></div></div>
+        {% endif %}
+        {% if datos_pago.pago_banco %}
+        <div class="col-12"><div style="background:var(--cat-surface);padding:.75rem;border-radius:6px;border:1px solid var(--cat-border);"><div style="color:var(--cat-text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;">Banco</div><div style="font-weight:500;color:var(--cat-text);">{{ datos_pago.pago_banco }}</div></div></div>
+        {% endif %}
+      </div>
+      {% if datos_pago.pago_instrucciones %}
+      <p style="color:var(--cat-text-muted);font-size:.9rem;margin-bottom:1.5rem;">{{ datos_pago.pago_instrucciones }}</p>
+      {% endif %}
+
+      <!-- Formulario para subir comprobante -->
+      <form method="post" action="{{ url_for('catalogo.subir_comprobante', id=orden.id) }}" enctype="multipart/form-data" style="border-top:1px solid var(--cat-border);padding-top:1.5rem;">
+        <label style="color:var(--cat-text-muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.5rem;font-weight:600;">Ya transferiste? Subi el comprobante *</label>
+        <input type="file" name="comprobante" class="form-control mb-3" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="background:var(--cat-surface);border:1px solid var(--cat-border);color:var(--cat-text);">
+        <button type="submit" class="cat-btn">Enviar comprobante</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Cancelar pedido -->
+    {% if orden.estado == 'pendiente_pago' and orden.comprobante_estado == 'sin_comprobante' %}
+    <form method="post" action="{{ url_for('catalogo.cancelar_pedido_mayorista', id=orden.id) }}" class="mt-4" onsubmit="return confirm('Cancelar este pedido?')">
+      <button type="submit" style="background:none;border:1px solid var(--cat-border);color:#f87171;padding:.5rem 1rem;border-radius:6px;font-size:.85rem;transition:all 0.2s;" onmouseover="this.style.borderColor='#f87171'; this.style.backgroundColor='rgba(248,113,113,0.1)';" onmouseout="this.style.borderColor='var(--cat-border)'; this.style.backgroundColor='transparent';">Cancelar pedido</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+'''
+
+def main():
+    print("=== Upgrade 113: Rediseño oscuro del detalle de Pedido ===")
+    escribir('templates/catalogo/mi_pedido_detalle.html', MI_PEDIDO_DETALLE)
+    print("")
+    print("=== LISTO ===")
+    print("Ejecuta: run.bat y apreta Ctrl+F5 en el navegador")
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Catalogos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Catalogos</h4>
+<div class="text-muted small">Canales de venta, medios de pago y transportistas</div>
+</div>
+</div>
+
+<div class="row g-3">
+<div class="col-md-4">
+<a href="{{ url_for('canales_gestionar') }}" class="text-decoration-none">
+<div class="card-kpi h-100" style="transition:box-shadow .15s;">
+<div class="kpi-icon kpi-icon-primary"><i class="bi bi-broadcast"></i></div>
+<div class="fw-semibold text-dark">Canales de venta</div>
+<div class="small text-muted">Web, ML, Instagram, WhatsApp, local...</div>
+</div></a>
+</div>
+<div class="col-md-4">
+<a href="{{ url_for('medios_pago_gestionar') }}" class="text-decoration-none">
+<div class="card-kpi h-100">
+<div class="kpi-icon kpi-icon-success"><i class="bi bi-cash-coin"></i></div>
+<div class="fw-semibold text-dark">Medios de pago</div>
+<div class="small text-muted">Efectivo, transferencia, tarjeta, MP, QR...</div>
+</div></a>
+</div>
+<div class="col-md-4">
+<a href="{{ url_for('transportistas_gestionar') }}" class="text-decoration-none">
+<div class="card-kpi h-100">
+<div class="kpi-icon kpi-icon-warning"><i class="bi bi-truck"></i></div>
+<div class="fw-semibold text-dark">Transportistas</div>
+<div class="small text-muted">Andreani, Via Cargo, Correo Argentino...</div>
+</div></a>
+</div>
+</div>
+{% endblock %}

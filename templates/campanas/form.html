@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Nueva campaña{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Nueva campaña</h4>
+<div class="text-muted small">Configura los filtros, escribi el mensaje y previsualiza antes de enviar</div>
+</div>
+<a href="{{ url_for('campanas_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" id="campana-form">
+<input type="hidden" name="accion" id="accion-input" value="preview">
+<div class="row g-3">
+
+<div class="col-md-8">
+<!-- Mensaje -->
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-pencil-square"></i> Mensaje</h6>
+<div class="mb-3">
+<label class="form-label">Nombre interno * <small class="text-muted">(para identificar la campaña)</small></label>
+<input name="nombre" class="form-control" required placeholder="Ej: Promo Noviembre Yerbas" value="{{ form_data.get('nombre', '') }}">
+</div>
+
+<div class="row g-2 mb-3">
+<div class="col-md-6">
+<label class="form-label">Enviar desde</label>
+<select name="remitente_email" class="form-select">
+{% for r in remitentes %}
+<option value="{{ r.email }}" {% if form_data.get('remitente_email') == r.email %}selected{% endif %}>{{ r.label }} · {{ r.email }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Asunto *</label>
+<input name="asunto" class="form-control" required placeholder="Ej: Nuevas ofertas en Familia Zaragoza" value="{{ form_data.get('asunto', '') }}">
+</div>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Cuerpo del email *</label>
+<textarea name="cuerpo" class="form-control" rows="12" required placeholder="Hola {{ '{{nombre}}' }},&#10;&#10;Tenemos nuevas ofertas...">{{ form_data.get('cuerpo', '') }}</textarea>
+<div class="form-text">
+Variables disponibles:
+<code>{{ '{{nombre}}' }}</code>
+<code>{{ '{{provincia}}' }}</code>
+<code>{{ '{{localidad}}' }}</code>
+<code>{{ '{{vendedor}}' }}</code>
+</div>
+</div>
+</div></div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-funnel"></i> Filtros de destinatarios</h6>
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Por tag</label>
+<select name="filtro_tags" class="form-select">
+<option value="">Todos</option>
+<option value="minorista" {% if form_data.get('filtro_tags') == 'minorista' %}selected{% endif %}>Solo minoristas</option>
+<option value="mayorista" {% if form_data.get('filtro_tags') == 'mayorista' %}selected{% endif %}>Solo mayoristas</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Por compras</label>
+<select name="filtro_clase" class="form-select">
+<option value="">Todos</option>
+<option value="con_compras" {% if form_data.get('filtro_clase') == 'con_compras' %}selected{% endif %}>Solo con compras</option>
+<option value="sin_compras" {% if form_data.get('filtro_clase') == 'sin_compras' %}selected{% endif %}>Solo sin compras</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Por color RFM</label>
+<select name="filtro_color" class="form-select">
+<option value="">Todos</option>
+<option value="verde-brillante" {% if form_data.get('filtro_color') == 'verde-brillante' %}selected{% endif %}>Verde brillante (activos)</option>
+<option value="verde" {% if form_data.get('filtro_color') == 'verde' %}selected{% endif %}>Verde</option>
+<option value="amarillo" {% if form_data.get('filtro_color') == 'amarillo' %}selected{% endif %}>Amarillo</option>
+<option value="naranja" {% if form_data.get('filtro_color') == 'naranja' %}selected{% endif %}>Naranja</option>
+<option value="rojo" {% if form_data.get('filtro_color') == 'rojo' %}selected{% endif %}>Rojo (en riesgo)</option>
+<option value="gris" {% if form_data.get('filtro_color') == 'gris' %}selected{% endif %}>Gris (sin compras)</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Por vendedor</label>
+<select name="filtro_vendedor" class="form-select">
+<option value="">Todos</option>
+{% for v in vendedores %}
+<option value="{{ v.id }}" {% if form_data.get('filtro_vendedor') == v.id|string %}selected{% endif %}>{{ v.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-12">
+<label class="form-label">Por provincia <small class="text-muted">(Ctrl+click para varios)</small></label>
+{% set provs_sel = form_data.getlist('filtro_provincia') if form_data.getlist is defined else form_data.get('filtro_provincia', []) %}
+{% if provs_sel is string %}{% set provs_sel = [provs_sel] %}{% endif %}
+<select name="filtro_provincia" class="form-select" multiple size="6">
+{% for p in provincias %}
+<option value="{{ p.id }}" {% if p.id|string in provs_sel %}selected{% endif %}>{{ p.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+</div></div>
+
+<div class="d-flex gap-2 flex-wrap">
+<button type="button" class="btn btn-primary" onclick="setAccion('preview')"><i class="bi bi-eye"></i> Previsualizar destinatarios</button>
+<button type="button" class="btn btn-outline-secondary" onclick="setAccion('guardar')"><i class="bi bi-save"></i> Guardar borrador</button>
+{% if preview_count is not none and preview_count > 0 %}
+<button type="button" class="btn btn-dark btn-lg" onclick="confirmarEnvio()"><i class="bi bi-send"></i> Enviar a {{ preview_count }} clientes</button>
+{% endif %}
+</div>
+</form>
+</div>
+
+<!-- Panel de preview -->
+<div class="col-md-4">
+<div class="card shadow-sm sticky-top" style="top:20px;">
+<div class="card-body">
+<h6 class="mb-3"><i class="bi bi-info-circle"></i> Resumen</h6>
+{% if preview_count is not none %}
+<div class="text-center mb-3 p-3" style="background:#eef2ff; border-radius:12px;">
+<div class="text-muted small">Destinatarios</div>
+<div class="display-5 fw-bold" style="color:#3b5bdb;">{{ preview_count }}</div>
+</div>
+{% if descripcion_filtros %}
+<div class="mb-2">
+<div class="text-muted small mb-1">Filtros aplicados:</div>
+{% for d in descripcion_filtros %}
+<span class="badge bg-secondary me-1 mb-1">{{ d }}</span>
+{% endfor %}
+</div>
+{% else %}
+<div class="small text-muted mb-2">Sin filtros (todos los clientes activos con email)</div>
+{% endif %}
+<div class="alert alert-warning py-2 small">
+<i class="bi bi-exclamation-triangle"></i> El envio es <strong>inmediato</strong>. Tiempo estimado: <strong>{{ (preview_count * 0.5 / 60)|round(1) }} min</strong>
+</div>
+{% else %}
+<div class="text-center text-muted py-4">
+<i class="bi bi-funnel fs-1 d-block mb-2"></i>
+<p class="small mb-0">Configura los filtros y hace click en <strong>Previsualizar</strong> para ver cuantos destinatarios hay.</p>
+</div>
+{% endif %}
+</div></div>
+</div>
+</div>
+</form>
+
+<div class="modal fade" id="confirmarModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h6 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Confirmar envio</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<p>Estas por enviar un email a <strong>{{ preview_count }} clientes</strong>. Esta accion no se puede deshacer.</p>
+<div class="alert alert-info py-2 small mb-0">
+<i class="bi bi-info-circle"></i> Los emails se envian de a uno con una pausa de 0.5s para no saturar el servidor.
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-dark" onclick="enviarAhora()"><i class="bi bi-send"></i> Si, enviar ahora</button>
+</div>
+</div></div></div>
+
+<script>
+function setAccion(a) {
+  document.getElementById('accion-input').value = a;
+  document.getElementById('campana-form').submit();
+}
+function confirmarEnvio() {
+  new bootstrap.Modal(document.getElementById('confirmarModal')).show();
+}
+function enviarAhora() {
+  document.getElementById('accion-input').value = 'enviar';
+  document.getElementById('campana-form').submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Preview importacion{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Preview de importacion</h4>
+<div class="text-muted small">Archivo: <strong>{{ nombre_archivo }}</strong> · {{ procesadas|length }} filas detectadas</div>
+</div>
+<a href="{{ url_for('clientes_importar') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cambiar archivo</a>
+</div>
+
+{% set ok_count = procesadas|selectattr('errores', 'equalto', [])|list|length %}
+{% set err_count = procesadas|length - ok_count %}
+
+<div class="row g-2 mb-3">
+<div class="col-md-6"><div class="card-kpi" style="border-left:3px solid #10b981;">
+<div class="kpi-label">Listos para importar</div>
+<div class="kpi-value">{{ ok_count }}</div>
+</div></div>
+<div class="col-md-6"><div class="card-kpi" style="border-left:3px solid #ef4444;">
+<div class="kpi-label">Con errores (se saltearan)</div>
+<div class="kpi-value">{{ err_count }}</div>
+</div></div>
+</div>
+
+<div class="card shadow-sm mb-3"><div class="table-responsive">
+<table class="table table-hover table-sm mb-0 align-middle">
+<thead class="table-light"><tr>
+<th>Fila</th><th>Nombre</th><th>Doc</th><th>Email</th><th>Telefono</th>
+<th>Provincia</th><th>Localidad</th><th>Tags</th><th>Estado</th>
+</tr></thead>
+<tbody>
+{% for d in procesadas %}
+<tr class="{% if d.errores %}table-danger{% endif %}">
+<td class="text-muted small">{{ d.fila }}</td>
+<td class="fw-semibold">{{ d.nombre_completo }}</td>
+<td class="small">{{ d.tipo_doc }} {{ d.nro_doc }}</td>
+<td class="small">{{ d.email or '—' }}</td>
+<td class="small">{{ d.telefono or '—' }}</td>
+<td class="small">
+{{ d.provincia_texto or '—' }}
+{% if d.provincia_id %} <i class="bi bi-check-circle-fill text-success" title="Provincia encontrada"></i>
+{% elif d.provincia_texto %} <i class="bi bi-exclamation-triangle-fill text-warning" title="Provincia no encontrada - se guardara como texto"></i>{% endif %}
+</td>
+<td class="small">
+{{ d.localidad_texto or '—' }}
+{% if d.localidad_id %} <i class="bi bi-check-circle-fill text-success" title="Localidad encontrada"></i>
+{% elif d.localidad_texto %} <i class="bi bi-exclamation-triangle-fill text-warning" title="Localidad no encontrada - se guardara como texto"></i>{% endif %}
+</td>
+<td class="small">
+{% if d.es_minorista %}<span class="badge bg-info text-dark">Min</span>{% endif %}
+{% if d.es_mayorista %}<span class="badge bg-warning text-dark">May</span>{% endif %}
+</td>
+<td>
+{% if d.errores %}
+<div class="small text-danger">{% for e in d.errores %}{{ e }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+{% else %}
+<span class="badge bg-success">OK</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="vendedor_id" value="{{ vendedor_id }}">
+<input type="hidden" name="accion" value="importar">
+<div class="d-flex gap-2">
+<a href="{{ url_for('clientes_importar') }}" class="btn btn-outline-secondary">Cancelar</a>
+<button class="btn btn-dark btn-lg" {% if ok_count == 0 %}disabled{% endif %}>
+<i class="bi bi-check2-circle"></i> Importar {{ ok_count }} cliente{% if ok_count != 1 %}s{% endif %}
+</button>
+</div>
+</form>
+
+<div class="alert alert-light border mt-3 small">
+<i class="bi bi-info-circle"></i>
+<strong>Notas:</strong>
+<ul class="mb-0 ps-3">
+<li>Las filas con errores <strong>NO se importan</strong> (se saltean).</li>
+<li>Las provincias/localidades marcadas con <i class="bi bi-exclamation-triangle-fill text-warning"></i> se guardan como texto y podes corregirlas despues en el cliente.</li>
+<li>Los duplicados (mismo email o documento) se detectan y se saltean automaticamente.</li>
+</ul>
+</div>
+{% endblock %}

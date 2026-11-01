@@ -1,0 +1,69 @@
+# -*- coding: utf-8 -*-
+import os
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+
+def escribir(relpath, contenido):
+    ruta = os.path.join(BASE, relpath)
+    carpeta = os.path.dirname(ruta)
+    if carpeta:
+        os.makedirs(carpeta, exist_ok=True)
+    with open(ruta, 'w', encoding='utf-8') as f:
+        f.write(contenido)
+    print(f"[upgrade134] escrito: {relpath}")
+
+
+LOGIN_HTML = r'''{% extends "base.html" %}
+{% block title %}Iniciar Sesión - Familia Zaragoza{% endblock %}
+{% block content %}
+<div class="row justify-content-center" style="margin-top:8vh;">
+<div class="col-md-5 col-lg-4">
+<div class="card shadow-sm" style="border-radius:20px;">
+<div class="card-body p-5">
+<div class="text-center mb-4">
+<div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg, #4f46e5, #8b5cf6);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:1.6rem;font-weight:800;box-shadow:0 8px 24px rgba(79,70,229,.3);margin-bottom:1rem;">
+<i class="bi bi-shop"></i>
+</div>
+<h3 class="mb-1" style="font-weight:800;letter-spacing:-.03em;">Iniciar Sesión</h3>
+<p class="text-muted mb-0" style="font-size:.9rem;">Ingresa a tu cuenta</p>
+</div>
+
+<form method="post">
+<div class="mb-3">
+<label class="form-label">DNI o Email</label>
+<input type="text" name="email" class="form-control" required autofocus placeholder="Tu DNI o Email" style="padding:.7rem .9rem;">
+</div>
+<div class="mb-4">
+<label class="form-label">Contrasena</label>
+<input type="password" name="password" class="form-control" required placeholder="••••••••" style="padding:.7rem .9rem;">
+</div>
+<button type="submit" class="btn btn-dark w-100" style="padding:.7rem;">Iniciar Sesión <i class="bi bi-box-arrow-in-right ms-1"></i></button>
+</form>
+
+<div class="text-center mt-4 pt-3 border-top">
+<p class="text-muted small mb-2">¿No tenés una cuenta?</p>
+{% if hay_usuarios %}
+<a href="{{ url_for('catalogo.registro') }}" class="btn btn-outline-dark w-100">Crear cuenta nueva</a>
+{% else %}
+<a href="{{ url_for('setup_admin') }}" class="btn btn-outline-dark w-100">Crear cuenta de Administrador</a>
+{% endif %}
+</div>
+
+</div>
+</div>
+<p class="text-center text-muted mt-4" style="font-size:.82rem;">Sistema seguro - Familia Zaragoza ®</p>
+</div>
+</div>
+{% endblock %}
+'''
+
+def main():
+    print("=== Upgrade 134: Ajuste visual del Login ===")
+    escribir('templates/login.html', LOGIN_HTML)
+    
+    print("")
+    print("=== LISTO ===")
+    print("Ejecuta: run.bat y apreta Ctrl+F5 en el navegador")
+
+if __name__ == '__main__':
+    main()

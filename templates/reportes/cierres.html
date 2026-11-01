@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Cierres guardados{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Cierres guardados</h4>
+<a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver a reportes</a>
+</div>
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr><th>Tipo</th><th>Desde</th><th>Hasta</th><th class="text-end">Stock fin</th><th class="text-end">Vendido</th><th class="text-end">Gastado</th><th class="text-end">Saldo</th><th class="text-end">A cobrar</th><th class="small text-muted">Guardado</th></tr></thead>
+<tbody>
+{% for c in cierres %}
+<tr><td><span class="badge bg-secondary">{{ c.tipo }}</span></td><td class="small">{{ c.fecha_desde }}</td><td class="small">{{ c.fecha_hasta }}</td>
+<td class="text-end">{{ '%g'|format(c.stock_unidades or 0) }}</td>
+<td class="text-end">${{ '%.2f'|format(c.total_vendido or 0) }}</td>
+<td class="text-end">${{ '%.2f'|format(c.total_gastado or 0) }}</td>
+<td class="text-end">${{ '%.2f'|format(c.saldo_actual or 0) }}</td>
+<td class="text-end">${{ '%.2f'|format(c.a_cobrar or 0) }}</td>
+<td class="small text-muted">{{ c.creado[:16] if c.creado else '' }}</td>
+</tr>
+{% else %}<tr><td colspan="9" class="text-center text-muted py-4">Sin cierres guardados. Anda a Reportes y guarda uno.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

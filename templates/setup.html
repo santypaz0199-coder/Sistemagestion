@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Crear Administrador - Sistema FZ{% endblock %}
+{% block content %}
+<div class="row justify-content-center" style="margin-top:5vh; margin-bottom:5vh;">
+<div class="col-md-8 col-lg-6">
+<div class="card shadow-sm" style="border-radius:20px;">
+<div class="card-body p-5">
+<div class="text-center mb-4">
+<h3 class="mb-1" style="font-weight:800;letter-spacing:-.03em;">Configuracion Inicial</h3>
+<p class="text-muted">Crea la cuenta principal de Administrador</p>
+</div>
+
+<form method="post">
+<div class="row g-3">
+<div class="col-md-12"><label class="form-label">Nombre completo *</label><input name="nombre" class="form-control" required value="{{ valores.get('nombre','') }}"></div>
+<div class="col-md-6"><label class="form-label">DNI / CUIT *</label><input name="nro_doc" class="form-control" required value="{{ valores.get('nro_doc','') }}"></div>
+<div class="col-md-6"><label class="form-label">Email (Gmail) *</label><input type="email" name="email" class="form-control" required value="{{ valores.get('email','') }}"></div>
+<div class="col-md-6"><label class="form-label">Provincia</label><input name="provincia" class="form-control" value="{{ valores.get('provincia','') }}"></div>
+<div class="col-md-6"><label class="form-label">Localidad</label><input name="localidad" class="form-control" value="{{ valores.get('localidad','') }}"></div>
+<div class="col-md-6"><label class="form-label">Codigo Postal</label><input name="codigo_postal" class="form-control" value="{{ valores.get('codigo_postal','') }}"></div>
+<div class="col-md-6"><label class="form-label">Telefono</label><input name="telefono" class="form-control" value="{{ valores.get('telefono','') }}"></div>
+<div class="col-12 mt-4">
+<label class="form-label">Contrasena * <span class="text-muted fw-normal">(min 8 caracteres, 1 numero)</span></label>
+<input type="password" name="password" class="form-control" required>
+</div>
+</div>
+<div class="mt-4">
+<button type="submit" class="btn btn-dark w-100" style="padding:.8rem;">Generar codigo de verificacion</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Ingresar — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="cat-form-card">
+    <h1>Ingresar</h1>
+    <p class="subtitle">Accede a tu cuenta para hacer pedidos.</p>
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required value="{{ form.get('email', '') }}" autofocus>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Contrasena</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <button class="cat-btn w-100">Ingresar</button>
+    </form>
+
+    <p class="text-center mt-4 mb-0" style="color:var(--cat-text-muted);font-size:.9rem;">
+      No tenes cuenta? <a href="{{ url_for('catalogo.registro') }}">Registrate</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

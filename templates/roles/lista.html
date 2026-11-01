@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Roles y permisos</h4>
+<div class="text-muted small">Defini que puede ver cada tipo de usuario</div>
+</div>
+<a href="{{ url_for('roles_nuevo') }}" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Nuevo rol</a>
+</div>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr>
+<th>Rol</th><th>Descripcion</th><th>Permisos</th><th class="text-end">Usuarios</th><th class="text-end">Acciones</th>
+</tr></thead>
+<tbody>
+{% for r in roles %}
+<tr>
+<td>
+<span class="fw-semibold">{{ r.nombre }}</span>
+{% if r.es_sistema %}<span class="badge bg-secondary ms-1" style="font-size:.6rem;">SISTEMA</span>{% endif %}
+</td>
+<td class="small text-muted">{{ r.descripcion or '—' }}</td>
+<td>
+{% set ps = permisos_por_rol.get(r.nombre, []) %}
+{% if ps == ['*TODOS*'] %}
+<span class="badge bg-success">Acceso total</span>
+{% elif ps %}
+{% for p in ps %}<span class="badge bg-light text-dark border me-1 mb-1">{{ p }}</span>{% endfor %}
+{% else %}
+<span class="text-muted small">Sin permisos</span>
+{% endif %}
+</td>
+<td class="text-end">{{ r.total_usuarios }}</td>
+<td class="text-end text-nowrap">
+<a href="{{ url_for('roles_editar', nombre=r.nombre) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+{% if not r.es_sistema %}
+<form method="post" action="{{ url_for('roles_eliminar', nombre=r.nombre) }}" class="d-inline"
+      onsubmit="return confirm('Eliminar el rol {{ r.nombre }}?')">
+<button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+</form>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+
+<div class="alert alert-light border mt-3 small">
+<i class="bi bi-info-circle"></i>
+<strong>Como funciona:</strong>
+<ul class="mb-0 ps-3">
+<li><strong>admin</strong>: siempre ve todo (no editable).</li>
+<li><strong>vendedor</strong>: ve solo sus propias ventas y clientes asignados.</li>
+<li><strong>Roles personalizados</strong>: ven los modulos que les asignes.</li>
+</ul>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Pagos pendientes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Pagos pendientes</h4>
+<div class="text-muted small">Aprueba o rechaza los comprobantes subidos por los mayoristas</div>
+</div>
+</div>
+
+<ul class="nav nav-pills mb-3">
+<li class="nav-item"><a class="nav-link {% if filtro=='subido' %}active{% endif %}" href="{{ url_for('pagos_pendientes_lista', filtro='subido') }}"><i class="bi bi-hourglass-split"></i> Esperando aprobacion {% if counts.subido %}<span class="badge bg-warning text-dark ms-1">{{ counts.subido }}</span>{% endif %}</a></li>
+<li class="nav-item"><a class="nav-link {% if filtro=='todos' %}active{% endif %}" href="{{ url_for('pagos_pendientes_lista', filtro='todos') }}"><i class="bi bi-list-check"></i> Todos los comprobantes</a></li>
+</ul>
+
+{% if rows %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light">
+<tr><th>Pedido</th><th>Fecha subida</th><th>Cliente</th><th class="text-end">Total</th><th>Comprobante</th><th class="text-end">Acciones</th></tr>
+</thead>
+<tbody>
+{% for r in rows %}
+<tr>
+<td class="fw-semibold">{{ r.numero_interno }}</td>
+<td class="small text-muted">{{ r.comprobante_subido_en[:16] if r.comprobante_subido_en else '—' }}</td>
+<td>
+<div class="small fw-semibold">{{ r.cliente_nombre }}</div>
+<div class="small text-muted">{{ r.cliente_email }}</div>
+</td>
+<td class="text-end fw-semibold">${{ '{:,.0f}'.format(r.total).replace(',','.') }}</td>
+<td>
+{% if r.comprobante_estado == 'subido' %}<span class="badge bg-warning text-dark">Esperando</span>
+{% elif r.comprobante_estado == 'aprobado' %}<span class="badge bg-success">Aprobado</span>
+{% elif r.comprobante_estado == 'rechazado' %}<span class="badge bg-danger">Rechazado</span>{% endif %}
+{% if r.comprobante_archivo %}
+<a href="{{ url_for('pagos_pendientes_ver_comprobante', id=r.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2" title="Ver comprobante"><i class="bi bi-file-earmark-text"></i></a>
+{% endif %}
+</td>
+<td class="text-end text-nowrap">
+{% if r.comprobante_estado == 'subido' and r.estado == 'pendiente_pago' %}
+<form method="post" action="{{ url_for('pagos_pendientes_aprobar', id=r.id) }}" class="d-inline" onsubmit="return confirm('Aprobar el pago? Se marcara como pagado y se descontara stock.')">
+<button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i> Aprobar</button>
+</form>
+<button type="button" class="btn btn-sm btn-outline-danger" onclick="openRechazar({{ r.id }}, '{{ r.numero_interno }}')"><i class="bi bi-x-lg"></i> Rechazar</button>
+{% elif r.comprobante_motivo_rechazo %}
+<div class="small text-muted">Motivo: {{ r.comprobante_motivo_rechazo }}</div>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+{% else %}
+<div class="card shadow-sm"><div class="card-body text-center py-5">
+<i class="bi bi-check2-circle fs-1 text-success"></i>
+<h5 class="mt-3">Sin comprobantes pendientes</h5>
+<p class="text-muted mb-0">Todos los pagos estan al dia.</p>
+</div></div>
+{% endif %}
+
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<form id="rechazar-form" method="post">
+<div class="modal-header"><h6 class="modal-title">Rechazar comprobante de {{ 'pedido' }} <span id="rechazar-num"></span></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<p class="small text-muted">Se le enviara un email al cliente avisando del rechazo con el motivo. Va a poder subir un comprobante nuevo.</p>
+<div class="mb-2"><label class="form-label">Motivo del rechazo *</label>
+<textarea name="motivo" class="form-control" rows="3" required placeholder="Ej: El monto transferido no coincide con el total del pedido"></textarea></div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="submit" class="btn btn-danger">Rechazar y notificar</button>
+</div>
+</form></div></div></div>
+
+<script>
+function openRechazar(id, num) {
+  document.getElementById('rechazar-form').action = '/pagos-pendientes/' + id + '/rechazar';
+  document.getElementById('rechazar-num').textContent = num;
+  new bootstrap.Modal(document.getElementById('rechazarModal')).show();
+}
+</script>
+{% endblock %}

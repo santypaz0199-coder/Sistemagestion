@@ -1,0 +1,62 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Mi cuenta — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="cat-form-card" style="max-width:600px;">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <h1>Mi cuenta</h1>
+      {% if mayorista.estado == 'pendiente' %}<span class="badge-cat badge-pendiente">Pendiente</span>
+      {% elif mayorista.estado == 'aprobado' %}<span class="badge-cat badge-aprobado">Aprobada</span>
+      {% else %}<span class="badge-cat badge-rechazado">Rechazada</span>{% endif %}
+    </div>
+    <p class="subtitle">{{ mayorista.email }}</p>
+
+    {% if mayorista.estado == 'pendiente' %}
+    <div class="cat-alert cat-alert-warning">
+      <i class="bi bi-hourglass-split"></i> Tu cuenta esta pendiente de aprobacion. Te vamos a avisar por email cuando este habilitada.
+    </div>
+    {% elif mayorista.estado == 'rechazado' %}
+    <div class="cat-alert cat-alert-danger">
+      <i class="bi bi-x-circle"></i> Tu cuenta fue rechazada.{% if mayorista.motivo_rechazo %} Motivo: {{ mayorista.motivo_rechazo }}{% endif %}
+    </div>
+    {% endif %}
+
+    <h6 class="mt-4 mb-3" style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;">Datos personales</h6>
+    <form method="post">
+      <input type="hidden" name="accion" value="perfil">
+      <div class="mb-3">
+        <label class="form-label">Nombre completo</label>
+        <input name="nombre_completo" class="form-control" required value="{{ mayorista.nombre_completo }}">
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Telefono</label>
+          <input name="telefono" class="form-control" value="{{ mayorista.telefono or '' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">CUIT / CUIL</label>
+          <input name="cuit" class="form-control" value="{{ mayorista.cuit or '' }}">
+        </div>
+      </div>
+      <button class="cat-btn">Guardar cambios</button>
+    </form>
+
+    <hr style="border-color:var(--cat-border);margin:2.5rem 0;">
+
+    <h6 class="mb-3" style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;">Cambiar contrasena</h6>
+    <form method="post">
+      <input type="hidden" name="accion" value="password">
+      <div class="mb-3">
+        <label class="form-label">Contrasena actual</label>
+        <input type="password" name="password_actual" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Nueva contrasena</label>
+        <input type="password" name="password_nueva" class="form-control" required>
+      </div>
+      <button class="cat-btn cat-btn-outline">Actualizar contrasena</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

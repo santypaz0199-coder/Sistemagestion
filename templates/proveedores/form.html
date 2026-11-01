@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Proveedor{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">{{ 'Editar' if proveedor else 'Nuevo' }} proveedor</h4>
+<a href="{{ url_for('gastos_lista', tab='proveedores') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+{% set v = valores if valores else (proveedor if proveedor else {}) %}
+<div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label">Nombre *</label><input name="nombre" class="form-control" required value="{{ v.get('nombre') or '' }}"></div>
+<div class="col-md-6"><label class="form-label">CUIT</label><input name="cuit" class="form-control" value="{{ v.get('cuit') or '' }}"></div>
+<div class="col-md-4"><label class="form-label">Contacto</label><input name="contacto" class="form-control" value="{{ v.get('contacto') or '' }}"></div>
+<div class="col-md-4"><label class="form-label">Telefono</label><input name="telefono" class="form-control" value="{{ v.get('telefono') or '' }}"></div>
+<div class="col-md-4"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ v.get('email') or '' }}"></div>
+</div>
+
+<div class="mt-4 mb-2">
+<label class="form-label fw-semibold">Productos que le compras a este proveedor</label>
+<div class="form-text mb-2">Marcá los productos. Cuando crees una compra a este proveedor, vas a ver solo estos productos disponibles.</div>
+</div>
+<div class="border rounded p-2" style="max-height:300px; overflow-y:auto;">
+{% if productos_lista %}
+{% for p in productos_lista %}
+<div class="form-check">
+<input class="form-check-input" type="checkbox" name="productos" value="{{ p.id }}" id="prod-{{ p.id }}" {% if p.id in productos_seleccionados %}checked{% endif %}>
+<label class="form-check-label small" for="prod-{{ p.id }}">
+{{ p.nombre }}{% if p.sku %} <span class="text-muted">({{ p.sku }})</span>{% endif %}
+</label>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-muted small mb-0">No hay productos cargados en el sistema.</p>
+{% endif %}
+</div>
+
+<div class="mt-4"><button class="btn btn-dark">Guardar</button></div>
+</form></div></div>
+{% endblock %}

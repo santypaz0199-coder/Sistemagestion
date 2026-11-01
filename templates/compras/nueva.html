@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Nueva compra{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Nueva compra</h4>
+<a href="{{ url_for('gastos_lista', tab='compras') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<form method="post">
+<div class="card shadow-sm mb-3"><div class="card-body"><div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Tipo de compra *</label>
+<select name="tipo" id="tipo-select" class="form-select" onchange="cambiarTipo()">
+<option value="stock">Compra de stock (suma inventario)</option>
+<option value="insumo">Compra de insumo / gasto (no suma inventario)</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Proveedor</label>
+<select name="proveedor_id" id="proveedor-select" class="form-select" onchange="cargarProductosProveedor()">
+<option value="">— Sin proveedor —</option>
+{% for p in proveedores %}
+<option value="{{ p.id }}">{{ p.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" value="{{ hoy }}"></div>
+<div class="col-md-9"><label class="form-label">Notas</label><input name="notas" class="form-control"></div>
+</div></div></div>
+
+<div id="bloque-stock">
+<div class="card shadow-sm mb-3"><div class="card-body">
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h6 class="mb-0">Productos</h6>
+<button type="button" class="btn btn-sm btn-outline-secondary" onclick="addItem()"><i class="bi bi-plus-lg"></i> Agregar producto</button>
+</div>
+<div class="alert alert-info py-2 small" id="aviso-proveedor" style="display:none;">
+<i class="bi bi-info-circle"></i> Elegí un proveedor para cargar automaticamente sus productos, o agrega manualmente.
+</div>
+<table class="table table-sm align-middle mb-0">
+<thead><tr><th>Producto</th><th width="100">Cantidad</th><th width="130">Costo unit.</th><th width="120" class="text-end">Subtotal</th><th width="40"></th></tr></thead>
+<tbody id="items-body"></tbody>
+</table>
+</div></div>
+<div class="card shadow-sm mb-3"><div class="card-body">
+<table class="table table-sm mb-0"><tr class="fw-bold"><td>Total:</td><td class="text-end" id="total-view">$0.00</td></tr></table>
+</div></div>
+</div>
+
+<div id="bloque-insumo" style="display:none;">
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3">Detalle del insumo / gasto</h6>
+<div class="row g-2">
+<div class="col-md-6"><label class="form-label">Descripcion *</label><input name="descripcion" class="form-control" placeholder="Ej: 20kg de azucar para produccion"></div>
+<div class="col-md-3"><label class="form-label">Monto total *</label><input type="number" step="0.01" min="0" name="monto_insumo" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Categoria de gasto</label>
+<select name="categoria_id" class="form-select">
+<option value="">— Sin categoria —</option>
+{% for c in categorias %}
+<option value="{{ c.id }}">{{ c.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+<p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> Los insumos no suman stock, se registran como egreso en compras.</p>
+</div></div>
+</div>
+
+<button class="btn btn-dark btn-lg">Registrar compra</button>
+</form>
+
+<script>
+const PRODUCTOS_POR_PROV = {};
+const TODOS_PRODS = [
+{% for p in productos_todos or [] %}
+{id: {{ p.id }}, nombre: {{ p.nombre|tojson }}, sku: {{ (p.sku or '')|tojson }}, costo: {{ p.costo or 0 }}},
+{% endfor %}
+];
+
+function cambiarTipo() {
+  const t = document.getElementById('tipo-select').value;
+  document.getElementById('bloque-stock').style.display = (t === 'stock') ? 'block' : 'none';
+  document.getElementById('bloque-insumo').style.display = (t === 'insumo') ? 'block' : 'none';
+}
+
+async function cargarProductosProveedor() {
+  const pid = document.getElementById('proveedor-select').value;
+  const aviso = document.getElementById('aviso-proveedor');
+  if (!pid) {
+    aviso.style.display = 'none';
+    return;
+  }
+  try {
+    const r = await fetch('/api/productos-por-proveedor/' + pid);
+    const prods = await r.json();
+    if (prods.length === 0) {
+      aviso.style.display = 'block';
+      aviso.textContent = 'Este proveedor no tiene productos asignados. Editalo en Proveedores o agrega manualmente.';
+    } else {
+      aviso.style.display = 'none';
+    }
+    // Reemplazar las opciones de los selects existentes
+    document.querySelectorAll('select[name="producto_id"]').forEach(sel => {
+      const actual = sel.value;
+      sel.innerHTML = '<option value="">--</option>';
+      prods.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.id;
+        o.textContent = p.nombre + (p.sku ? ' ('+p.sku+')' : '');
+        o.dataset.costo = p.costo;
+        sel.appendChild(o);
+      });
+      sel.value = actual;
+    });
+    if (prods.length > 0 && document.querySelectorAll('.item-row').length === 0) {
+      addItem();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function addItem() {
+  const tbody = document.getElementById('items-body');
+  const row = document.createElement('tr');
+  row.className = 'item-row';
+  const pid = document.getElementById('proveedor-select').value;
+  const prods = pid ? (await (await fetch('/api/productos-por-proveedor/' + pid)).json()) : TODOS_PRODS;
+  let opts = '<option value="">--</option>';
+  prods.forEach(p => {
+    opts += '<option value="' + p.id + '" data-costo="' + p.costo + '">' + p.nombre + '</option>';
+  });
+  row.innerHTML = '<td><select name="producto_id" class="form-select form-select-sm" onchange="onProdChange(this)">' + opts + '</select></td>' +
+    '<td><input type="number" step="0.01" min="0.01" name="cantidad" class="form-control form-control-sm" value="1" onchange="updateTotals()"></td>' +
+    '<td><input type="number" step="0.01" min="0" name="costo" class="form-control form-control-sm" value="0" onchange="updateTotals()"></td>' +
+    '<td class="text-end subtotal">$0.00</td>' +
+    '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)"><i class="bi bi-trash"></i></button></td>';
+  tbody.appendChild(row);
+}
+function removeItem(b) { b.closest('tr').remove(); updateTotals(); }
+function onProdChange(s) {
+  const o = s.options[s.selectedIndex];
+  s.closest('tr').querySelector('[name="costo"]').value = o.dataset.costo || 0;
+  updateTotals();
+}
+function updateTotals() {
+  let sub = 0;
+  document.querySelectorAll('.item-row').forEach(r => {
+    const c = parseFloat(r.querySelector('[name="cantidad"]').value) || 0;
+    const co = parseFloat(r.querySelector('[name="costo"]').value) || 0;
+    const s = c * co;
+    r.querySelector('.subtotal').textContent = '$' + s.toFixed(2);
+    sub += s;
+  });
+  document.getElementById('total-view').textContent = '$' + sub.toFixed(2);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  addItem();
+});
+</script>
+{% endblock %}

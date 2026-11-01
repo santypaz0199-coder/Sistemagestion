@@ -1,0 +1,80 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Mis pedidos — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 style="font-weight:300;font-size:2rem;margin:0;">Mis pedidos</h1>
+    <a href="{{ url_for('catalogo.index') }}" class="cat-btn cat-btn-outline" style="padding:.5rem 1rem;font-size:.85rem;"><i class="bi bi-cart-plus"></i> Hacer nuevo pedido</a>
+  </div>
+
+  {% if pedidos %}
+  <div style="background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; margin:0; color:var(--cat-text);">
+      <thead>
+        <tr style="background:var(--cat-surface-2); border-bottom:1px solid var(--cat-border);">
+          <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;padding:1rem 1.5rem;text-align:left;font-weight:600;">Pedido</th>
+          <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;padding:1rem 1.5rem;text-align:left;font-weight:600;">Fecha</th>
+          <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;padding:1rem 1.5rem;text-align:left;font-weight:600;">Estado</th>
+          <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;padding:1rem 1.5rem;text-align:right;font-weight:600;">Total</th>
+          <th style="padding:1rem 1.5rem; width:50px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos %}
+        <tr class="fila-pedido" style="border-bottom:1px solid var(--cat-border); transition:background 0.2s;">
+          <td style="padding:1.25rem 1.5rem; font-weight:600;">{{ p.numero_interno }}</td>
+          <td style="padding:1.25rem 1.5rem; color:var(--cat-text-muted); font-size:.9rem;">{{ p.fecha }}</td>
+          <td style="padding:1.25rem 1.5rem;">
+            {% if p.estado == 'pendiente_pago' %}
+              {% if p.comprobante_estado == 'subido' %}
+                <span class="badge-estado" style="background:rgba(6,182,212,.15); color:#22d3ee; border:1px solid rgba(6,182,212,.3);">Comprobante en revisión</span>
+              {% elif p.comprobante_estado == 'rechazado' %}
+                <span class="badge-estado" style="background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.3);">Comprobante rechazado</span>
+              {% else %}
+                <span class="badge-estado" style="background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3);">Pendiente de pago</span>
+              {% endif %}
+            {% elif p.estado == 'pagado_sin_enviar' %}
+              <span class="badge-estado" style="background:rgba(6,182,212,.15); color:#22d3ee; border:1px solid rgba(6,182,212,.3);">Pagado - En preparación</span>
+            {% elif p.estado == 'pagado_enviado' %}
+              <span class="badge-estado" style="background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3);">Enviado</span>
+            {% else %}
+              <span class="badge-estado" style="background:rgba(107,114,128,.15); color:#9ca3af; border:1px solid rgba(107,114,128,.3);">Cancelado</span>
+            {% endif %}
+          </td>
+          <td style="padding:1.25rem 1.5rem; text-align:right; font-weight:600; color:var(--cat-accent);">
+            ${{ "{:,.2f}".format(p.total).replace(",", "X").replace(".", ",").replace("X", ".") }}
+          </td>
+          <td style="padding:1.25rem 1.5rem; text-align:center;">
+            <a href="{{ url_for('catalogo.mi_pedido_detalle', id=p.id) }}" style="color:var(--cat-accent); text-decoration:none; font-size:1.2rem;" title="Ver detalle">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:4rem 1rem; background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px;">
+    <i class="bi bi-receipt" style="font-size:4rem; color:var(--cat-border); display:block; margin-bottom:1rem;"></i>
+    <h3 style="font-weight:300; color:var(--cat-text-muted); margin-bottom:1.5rem;">No tenés pedidos aún</h3>
+    <a href="{{ url_for('catalogo.index') }}" class="cat-btn">Ver catálogo</a>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.fila-pedido:hover {
+  background: var(--cat-surface-2) !important;
+}
+.badge-estado {
+  padding: .35rem .75rem;
+  border-radius: 6px;
+  font-size: .75rem;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: .02em;
+}
+</style>
+{% endblock %}

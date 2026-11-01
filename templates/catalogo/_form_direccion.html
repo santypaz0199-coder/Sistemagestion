@@ -1,0 +1,26 @@
+<div class="row g-2">
+  <div class="col-md-12">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">Destinatario</label>
+    <input name="destinatario_nombre" class="form-control" placeholder="Nombre y apellido" value="{{ mayorista.nombre_completo }}">
+  </div>
+  <div class="col-md-8">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">Calle y altura *</label>
+    <input name="destinatario_calle" class="form-control" placeholder="Ej: Av. Colon 123" value="{% if mayorista.calle %}{{ mayorista.calle }} {% endif %}{{ mayorista.altura or '' }}">
+  </div>
+  <div class="col-md-4">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">CP</label>
+    <input name="destinatario_cp" class="form-control" value="{{ mayorista.codigo_postal or '' }}">
+  </div>
+  <div class="col-md-6">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">Localidad *</label>
+    <input name="destinatario_localidad" class="form-control" value="{{ mayorista.localidad or '' }}">
+  </div>
+  <div class="col-md-6">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">Provincia *</label>
+    <input name="destinatario_provincia" class="form-control" value="{{ mayorista.provincia or '' }}">
+  </div>
+  <div class="col-12">
+    <label style="color:var(--cat-text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;">Piso / Depto / Referencias</label>
+    <input name="destinatario_detalles" class="form-control" placeholder="Piso, depto, referencias" value="{% if mayorista.piso %}Piso {{ mayorista.piso }} {% endif %}{% if mayorista.depto %}Depto {{ mayorista.depto }}{% endif %}">
+  </div>
+</div>

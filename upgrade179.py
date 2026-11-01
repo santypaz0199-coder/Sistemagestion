@@ -1,0 +1,207 @@
+import os
+
+def aplicar_actualizacion():
+    print("Iniciando actualizacion: Arreglando cantidades y precios en detalle.html...")
+    
+    ruta_archivo = os.path.join('templates', 'ventas', 'detalle.html')
+    
+    if not os.path.exists(os.path.dirname(ruta_archivo)):
+        print(f"Error: No se encontró la carpeta {os.path.dirname(ruta_archivo)}")
+        return
+
+    html_content = """{% extends "base.html" %}
+{% block title %}{{ orden.numero_interno }}{% endblock %}
+{% block content %}
+<style>
+  .ticket-card { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .ticket-title { font-size: 1rem; font-weight: 600; color: #4b5563; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+  .info-label { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+  .info-value { font-size: 1rem; font-weight: 500; color: #111827; }
+  
+  /* Ocultar flechitas del input type number */
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1" style="font-weight:700; letter-spacing:-.02em;">Orden {{ orden.numero_interno }}
+            {% if orden.estado == 'pendiente_pago' %}<span class="badge bg-warning text-dark ms-2 fs-6">Pendiente pago</span>
+            {% elif orden.estado == 'pagado_sin_enviar' %}<span class="badge bg-info text-dark ms-2 fs-6">Pagado / Sin enviar</span>
+            {% elif orden.estado == 'pagado_enviado' %}<span class="badge bg-success ms-2 fs-6">Pagado / Enviado</span>
+            {% else %}<span class="badge bg-secondary ms-2 fs-6">Cancelado</span>{% endif %}
+        </h3>
+        <div class="text-muted">{{ orden.fecha }} · {{ orden.vendedor_nombre }} · {{ orden.canal_nombre or 'Sin canal' }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('ventas_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+        <a href="{{ url_for('ventas_imprimir', id=orden.id) }}" target="_blank" class="btn btn-outline-dark"><i class="bi bi-printer"></i> Imprimir / PDF</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- INFO CLIENTE -->
+        <div class="ticket-card">
+            <div class="ticket-title"><span>Información del comprador</span></div>
+            <div class="row g-3">
+                <div class="col-md-6"><div class="info-label">Nombre</div><div class="info-value">{{ orden.cliente_nombre }}</div></div>
+                <div class="col-md-6"><div class="info-label">Email</div><div class="info-value">{{ orden.cliente_email or '—' }}</div></div>
+                <div class="col-md-6"><div class="info-label">Teléfono</div><div class="info-value">{{ orden.cliente_telefono or '—' }}</div></div>
+            </div>
+        </div>
+
+        <!-- PRODUCTOS -->
+        <div class="ticket-card">
+            <div class="ticket-title">Productos</div>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Producto</th><th class="text-end">Cant.</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th><th></th></tr></thead>
+                <tbody>
+                    {% for it in items %}
+                    <tr>
+                        <td>{{ it.producto_nombre }}</td>
+                        <td class="text-end">{{ '%g'|format(it.cantidad) }}</td>
+                        <td class="text-end">{{ it.precio_unitario|pesos }}</td>
+                        <td class="text-end">{{ it.subtotal|pesos }}</td>
+                        <td class="text-end">
+                            {% if orden.estado != 'cancelado' %}
+                            <form method="post" action="{{ url_for('ventas_eliminar_item', id=orden.id, item_id=it.id) }}" class="d-inline" onsubmit="return confirm('Eliminar?')"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot><tr><td colspan="3" class="text-end text-muted small pt-3">Kilos totales:</td><td class="text-end fw-bold pt-3">{{ '%.2f'|format(kilos_total) }} kg</td><td></td></tr></tfoot>
+            </table>
+
+            {% if orden.estado != 'cancelado' %}
+            <div class="mt-3 p-3 bg-light rounded border">
+                <form method="post" action="{{ url_for('ventas_agregar_item', id=orden.id) }}" class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <select name="producto_id" class="form-select form-select-sm" required>
+                            <option value="">Añadir producto...</option>
+                            {% for p in todos_productos %}
+                            <option value="{{ p.id }}" data-precio="{{ p.precio }}">{{ p.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- CANTIDAD ENTERA -->
+                    <div class="col-md-2">
+                        <input type="number" step="1" min="1" name="cantidad" class="form-control form-control-sm text-center" value="1" required>
+                    </div>
+                    <!-- PRECIO FIJO (READONLY) -->
+                    <div class="col-md-2">
+                        <input type="number" step="0.01" name="precio" class="form-control form-control-sm bg-light fw-bold" readonly required>
+                    </div>
+                    <div class="col-md-2"><button type="submit" class="btn btn-sm btn-dark w-100">Sumar</button></div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- NOTIFICACIONES -->
+        <div class="ticket-card">
+            <div class="ticket-title">Enviar email al cliente</div>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='confirmacion') }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Enviar orden</button>
+                </form>
+                
+                {% if orden.estado == 'pendiente_pago' %}
+                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='pago') }}" class="d-inline" onsubmit="return confirm('Al notificar el pago, la orden pasará a Pagado/Sin enviar. ¿Continuar?')">
+                    <button type="submit" class="btn btn-outline-success btn-sm">Notificar pago</button>
+                </form>
+                {% elif orden.estado == 'pagado_sin_enviar' %}
+                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='envio') }}" class="d-inline" onsubmit="return confirm('Al notificar el envío, la orden pasará a Pagado/Enviado. ¿Continuar?')">
+                    <button type="submit" class="btn btn-outline-info btn-sm">Notificar envío</button>
+                </form>
+                {% elif orden.estado == 'pagado_enviado' %}
+                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='entrega') }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Notificar entrega</button>
+                </form>
+                {% endif %}
+                
+                <form method="post" action="{{ url_for('ventas_email_enviar', id=orden.id, tipo='factura') }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-dark btn-sm">Enviar factura</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- RESUMEN -->
+        <div class="ticket-card" style="background:#fafbfd;">
+            <div class="ticket-title">Resumen comercial</div>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Subtotal</span><span>{{ orden.subtotal|pesos }}</span></div>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Envío</span><span>{{ orden.costo_envio|pesos }}</span></div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center"><span class="fw-bold">Total</span><span class="fw-bold fs-4 text-success">{{ orden.total|pesos }}</span></div>
+        </div>
+
+        <!-- ESTADO ESTRICTO CON BOTONES -->
+        <div class="ticket-card">
+            <div class="ticket-title">Avanzar Estado</div>
+            <div class="d-grid gap-2">
+                {% if orden.estado == 'pendiente_pago' %}
+                <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
+                    <input type="hidden" name="estado" value="pagado_sin_enviar">
+                    <button class="btn btn-success w-100" onclick="return confirm('¿Confirmás que el pago fue recibido? Se descontará stock.')">Marcar como PAGADO</button>
+                </form>
+                {% elif orden.estado == 'pagado_sin_enviar' %}
+                <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
+                    <input type="hidden" name="estado" value="pagado_enviado">
+                    <button class="btn btn-info text-white w-100" onclick="return confirm('¿Confirmás que el pedido fue enviado?')">Marcar como ENVIADO</button>
+                </form>
+                {% endif %}
+                
+                {% if orden.estado != 'cancelado' %}
+                <form method="post" action="{{ url_for('ventas_estado', id=orden.id) }}">
+                    <input type="hidden" name="estado" value="cancelado">
+                    <button class="btn btn-outline-danger w-100" onclick="return confirm('¿Cancelar la orden?')">Cancelar Orden</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ENVIO -->
+        <div class="ticket-card">
+            <div class="ticket-title">Envío</div>
+            <form method="post" action="{{ url_for('ventas_envio', id=orden.id) }}">
+                <div class="mb-2"><input name="destinatario_nombre" class="form-control form-control-sm" value="{{ orden.destinatario_nombre or orden.cliente_nombre }}" placeholder="Destinatario"></div>
+                <div class="mb-2"><input name="destinatario_calle" class="form-control form-control-sm" value="{{ orden.destinatario_calle or '' }}" placeholder="Dirección"></div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><input name="destinatario_localidad" class="form-control form-control-sm" value="{{ orden.destinatario_localidad or '' }}" placeholder="Localidad"></div>
+                    <div class="col-6"><input name="destinatario_provincia" class="form-control form-control-sm" value="{{ orden.destinatario_provincia or '' }}" placeholder="Provincia"></div>
+                </div>
+                <div class="mb-2"><select name="transportista_id" class="form-select form-select-sm"><option value="">Transportista...</option>{% for t in transportistas %}<option value="{{ t.id }}" {% if orden.transportista_id==t.id %}selected{% endif %}>{{ t.nombre }}</option>{% endfor %}</select></div>
+                <div class="mb-2"><input name="nro_guia" class="form-control form-control-sm" value="{{ orden.nro_guia or '' }}" placeholder="Nro Guía"></div>
+                <button class="btn btn-dark btn-sm w-100">Guardar Envío</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectProd = document.querySelector('select[name="producto_id"]');
+    if (selectProd) {
+        selectProd.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            // Al cambiar el producto, setea el precio automáticamente en el input readonly
+            if (opt.dataset.precio) this.closest('form').querySelector('input[name="precio"]').value = opt.dataset.precio;
+        });
+    }
+});
+</script>
+{% endblock %}"""
+
+    try:
+        with open(ruta_archivo, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        print("¡detalle.html actualizado con exito!")
+        print("Ahora la cantidad suma de 1 en 1 y el precio es fijo (no se puede modificar a mano).")
+    except Exception as e:
+        print(f"Hubo un error al guardar el archivo: {e}")
+
+if __name__ == '__main__':
+    aplicar_actualizacion()

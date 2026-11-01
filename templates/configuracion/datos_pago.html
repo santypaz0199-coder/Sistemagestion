@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Datos de pago{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Datos de pago</h4>
+<div class="text-muted small">Esta informacion se le muestra al mayorista cuando hace un pedido</div>
+</div>
+<a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Alias de transferencia</label>
+<input name="pago_alias" class="form-control" value="{{ datos.pago_alias }}" placeholder="Ej: FAMILIA.ZARAGOZA.MP">
+</div>
+<div class="col-md-6">
+<label class="form-label">CBU</label>
+<input name="pago_cbu" class="form-control" value="{{ datos.pago_cbu }}" placeholder="22 digitos">
+</div>
+<div class="col-md-6">
+<label class="form-label">Titular de la cuenta</label>
+<input name="pago_titular" class="form-control" value="{{ datos.pago_titular }}" placeholder="Familia Zaragoza SRL">
+</div>
+<div class="col-md-6">
+<label class="form-label">CUIT del titular</label>
+<input name="pago_cuit" class="form-control" value="{{ datos.pago_cuit }}" placeholder="30-71234567-8">
+</div>
+<div class="col-md-6">
+<label class="form-label">Banco</label>
+<input name="pago_banco" class="form-control" value="{{ datos.pago_banco }}" placeholder="Ej: Banco Nacion">
+</div>
+<div class="col-12">
+<label class="form-label">Instrucciones adicionales</label>
+<textarea name="pago_instrucciones" class="form-control" rows="3" placeholder="Instrucciones que se le muestran al mayorista">{{ datos.pago_instrucciones }}</textarea>
+</div>
+</div>
+<div class="mt-4">
+<button class="btn btn-dark"><i class="bi bi-save"></i> Guardar datos de pago</button>
+</div>
+</form>
+</div></div>
+
+<div class="alert alert-light border mt-3 small">
+<i class="bi bi-info-circle"></i> Estos datos se incluyen automaticamente en el email que recibe el mayorista cuando hace un pedido.
+</div>
+{% endblock %}

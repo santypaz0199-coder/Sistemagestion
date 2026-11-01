@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Remitentes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Remitentes y SMTP</h4>
+<div class="text-muted small">Configura todos los correos que puede usar el sistema para enviar</div>
+</div>
+<a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row g-3">
+
+<!-- Columna izquierda: lista de remitentes + agregar -->
+<div class="col-md-5">
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-envelope-plus"></i> Agregar remitente</h6>
+<form method="post">
+<input type="hidden" name="accion" value="agregar">
+<div class="mb-2">
+<label class="form-label small">Email *</label>
+<input name="email" type="email" class="form-control form-control-sm" required placeholder="pedro@familiazaragoza.com">
+<div class="form-text">El correo debe estar confirmado en Mailrelay.</div>
+</div>
+<div class="mb-2">
+<label class="form-label small">Nombre visible *</label>
+<input name="nombre" class="form-control form-control-sm" required placeholder="Pedro - Familia Zaragoza">
+<div class="form-text">Lo que ve el cliente en "De:".</div>
+</div>
+<button class="btn btn-dark btn-sm w-100">Agregar remitente</button>
+</form>
+</div></div>
+
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-list-check"></i> Remitentes activos</h6>
+{% if remitentes %}
+<table class="table table-sm mb-0">
+<tbody>
+{% for r in remitentes %}
+<tr>
+<td>
+<div class="fw-semibold small">{{ r.nombre }}</div>
+<div class="text-muted" style="font-size:.75rem;">{{ r.email }}</div>
+</td>
+<td class="text-end text-nowrap">
+<form method="post" class="d-inline">
+<input type="hidden" name="accion" value="toggle">
+<input type="hidden" name="remitente_id" value="{{ r.id }}">
+<button class="btn btn-sm btn-outline-secondary" title="Desactivar"><i class="bi bi-pause"></i></button>
+</form>
+<form method="post" class="d-inline" onsubmit="return confirm('Eliminar este remitente?')">
+<input type="hidden" name="accion" value="eliminar">
+<input type="hidden" name="remitente_id" value="{{ r.id }}">
+<button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="text-muted small mb-0">No hay remitentes activos.</p>
+{% endif %}
+
+{% if remitentes_inactivos %}
+<hr class="my-3">
+<div class="small text-muted mb-2">Inactivos:</div>
+{% for r in remitentes_inactivos %}
+<div class="d-flex justify-content-between align-items-center mb-1">
+<div>
+<span class="text-muted small">{{ r.nombre }} &lt;{{ r.email }}&gt;</span>
+</div>
+<form method="post" class="d-inline">
+<input type="hidden" name="accion" value="toggle">
+<input type="hidden" name="remitente_id" value="{{ r.id }}">
+<button class="btn btn-sm btn-outline-success py-0 px-2"><i class="bi bi-play"></i></button>
+</form>
+</div>
+{% endfor %}
+{% endif %}
+</div></div>
+
+</div>
+
+<!-- Columna derecha: config de propositos + SMTP -->
+<div class="col-md-7">
+
+<form method="post">
+<input type="hidden" name="accion" value="config">
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-tag"></i> Remitente para cada proposito</h6>
+<div class="form-text mb-3">Configura que correo se usa en cada tipo de envio.</div>
+
+<div class="mb-3">
+<label class="form-label small fw-semibold">📧 Notificaciones automaticas</label>
+<div class="row g-2">
+<div class="col-md-7">
+<select name="remitente_notificaciones_email" class="form-select form-select-sm">
+{% for r in remitentes %}
+<option value="{{ r.email }}" {% if cfg.remitente_notificaciones_email == r.email %}selected{% endif %}>{{ r.email }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-5">
+<input name="remitente_notificaciones_nombre" class="form-control form-control-sm" value="{{ cfg.remitente_notificaciones_nombre or 'Familia Zaragoza' }}" placeholder="Nombre visible">
+</div>
+</div>
+<div class="form-text">Se usa para: pagos acreditados, envios, entregas, facturas.</div>
+</div>
+
+<div class="mb-3">
+<label class="form-label small fw-semibold">📢 Campañas masivas</label>
+<div class="row g-2">
+<div class="col-md-7">
+<select name="remitente_campanas_email" class="form-select form-select-sm">
+{% for r in remitentes %}
+<option value="{{ r.email }}" {% if cfg.remitente_campanas_email == r.email %}selected{% endif %}>{{ r.email }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-5">
+<input name="remitente_campanas_nombre" class="form-control form-control-sm" value="{{ cfg.remitente_campanas_nombre or 'Familia Zaragoza' }}" placeholder="Nombre visible">
+</div>
+</div>
+<div class="form-text">Se usa para: promociones, novedades, ofertas.</div>
+</div>
+
+<div class="mb-0">
+<label class="form-label small fw-semibold">🏢 Atencion al cliente</label>
+<div class="row g-2">
+<div class="col-md-7">
+<select name="remitente_atencion_email" class="form-select form-select-sm">
+{% for r in remitentes %}
+<option value="{{ r.email }}" {% if cfg.remitente_atencion_email == r.email %}selected{% endif %}>{{ r.email }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-5">
+<input name="remitente_atencion_nombre" class="form-control form-control-sm" value="{{ cfg.remitente_atencion_nombre or 'Familia Zaragoza' }}" placeholder="Nombre visible">
+</div>
+</div>
+<div class="form-text">Se muestra en la firma, impresiones y emails personales del admin.</div>
+</div>
+</div></div>
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-hdd-network"></i> Servidor SMTP (Mailrelay)</h6>
+<div class="row g-2">
+<div class="col-md-8">
+<label class="form-label small">Host *</label>
+<input name="smtp_host" class="form-control form-control-sm" value="{{ cfg.smtp_host }}" placeholder="smtp1.s.ipzmarketing.com">
+</div>
+<div class="col-md-4">
+<label class="form-label small">Puerto</label>
+<input name="smtp_puerto" class="form-control form-control-sm" value="{{ cfg.smtp_puerto or '587' }}">
+</div>
+<div class="col-md-6">
+<label class="form-label small">Usuario SMTP *</label>
+<input name="smtp_usuario" class="form-control form-control-sm" value="{{ cfg.smtp_usuario }}">
+</div>
+<div class="col-md-6">
+<label class="form-label small">Contraseña SMTP *</label>
+<input type="password" name="smtp_password" class="form-control form-control-sm" placeholder="{% if cfg.smtp_password_set %}•••••••• (dejar vacio para no cambiar){% endif %}">
+</div>
+<div class="col-md-6">
+<label class="form-label small">Cifrado</label>
+<select name="smtp_seguridad" class="form-select form-select-sm">
+<option value="tls" {% if cfg.smtp_seguridad == 'tls' or not cfg.smtp_seguridad %}selected{% endif %}>STARTTLS (recomendado)</option>
+<option value="ssl" {% if cfg.smtp_seguridad == 'ssl' %}selected{% endif %}>SSL/TLS</option>
+</select>
+</div>
+</div>
+</div></div>
+
+<button class="btn btn-dark w-100"><i class="bi bi-save"></i> Guardar configuracion</button>
+</form>
+
+<!-- Probar conexion -->
+<div class="card shadow-sm mt-3"><div class="card-body">
+<h6 class="mb-2"><i class="bi bi-send-check"></i> Probar envio</h6>
+<p class="small text-muted mb-2">Manda un email de prueba con la configuracion guardada.</p>
+<form method="post">
+<input type="hidden" name="accion" value="probar">
+<div class="row g-2">
+<div class="col-md-6">
+<label class="form-label small">Enviar a *</label>
+<input name="probar_destino" type="email" class="form-control form-control-sm" required placeholder="tu@email.com">
+</div>
+<div class="col-md-6">
+<label class="form-label small">Desde</label>
+<select name="probar_desde" class="form-select form-select-sm">
+{% for r in remitentes %}
+<option value="{{ r.email }}" {% if cfg.remitente_notificaciones_email == r.email %}selected{% endif %}>{{ r.email }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+<button class="btn btn-outline-primary btn-sm mt-2"><i class="bi bi-send"></i> Enviar prueba</button>
+</form>
+</div></div>
+
+</div>
+</div>
+{% endblock %}

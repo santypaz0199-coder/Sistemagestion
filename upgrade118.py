@@ -1,0 +1,148 @@
+# -*- coding: utf-8 -*-
+import os
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+
+def escribir(relpath, contenido):
+    ruta = os.path.join(BASE, relpath)
+    carpeta = os.path.dirname(ruta)
+    if carpeta:
+        os.makedirs(carpeta, exist_ok=True)
+    with open(ruta, 'w', encoding='utf-8') as f:
+        f.write(contenido)
+    print(f"[upgrade118] escrito: {relpath}")
+
+
+CATALOGO_PRODUCTO = r'''{% extends "catalogo/base.html" %}
+{% block title %}{{ producto.nombre }} — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<style>
+  /* Achicamos los espacios del detalle */
+  .cat-detail { padding: 2rem 0 !important; }
+  .cat-detail-img { max-width: 400px; margin: 0 auto; max-height: 400px; }
+  .cat-detail-info h1 { font-size: 1.8rem; margin-bottom: .5rem; }
+  .cat-detail-price { font-size: 1.5rem; margin: 1rem 0; }
+  /* Achicamos un poco el carrusel de abajo */
+  .carrusel-card { flex: 0 0 200px !important; }
+</style>
+
+<div class="cat-detail">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-md-5">
+        <div class="cat-detail-img">
+          {% if producto.foto %}
+            <img src="{{ url_for('productos_ver_foto', nombre=producto.foto) }}" alt="{{ producto.nombre }}" style="width:100%; height:100%; object-fit:contain;">
+          {% else %}
+            <i class="bi bi-image placeholder-icon" style="font-size:3rem;"></i>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="cat-detail-info">
+          {% if producto.categoria_nombre %}<div class="cat-card-cat">{{ producto.categoria_nombre }}</div>{% endif %}
+          <h1>{{ producto.nombre }}</h1>
+          {% if producto.peso_valor %}<p class="text-muted-cat mb-2">{{ producto.peso_valor }}{{ producto.peso_unidad }}</p>{% endif %}
+          <div class="cat-detail-price">{{ producto.precio|pesos }}</div>
+          <p class="text-muted-cat mb-3" style="font-size:.85rem;">IVA no incluido. Precio sujeto a cambios sin previo aviso.</p>
+          
+          {% if current_mayorista %}
+          <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+            <div style="display:flex;align-items:center;gap:.5rem;background:var(--cat-surface-2);border:1px solid var(--cat-border);border-radius:8px;padding:.3rem;">
+              <button type="button" onclick="cambiarCant(-1)" style="background:none;border:none;color:var(--cat-text);font-size:1.1rem;cursor:pointer;padding:0 .4rem;">−</button>
+              <input type="number" id="cant-input" value="1" min="1" step="1" style="width:50px;text-align:center;background:none;border:none;color:var(--cat-text);font-weight:500;">
+              <button type="button" onclick="cambiarCant(1)" style="background:none;border:none;color:var(--cat-text);font-size:1.1rem;cursor:pointer;padding:0 .4rem;">+</button>
+            </div>
+            <button type="button" class="cat-btn" style="padding:.6rem 1.5rem;" onclick="addToCartAjax({{ producto.id }}, document.getElementById('cant-input').value)">
+              <i class="bi bi-bag-plus"></i> Añadir al carrito
+            </button>
+          </div>
+          <script>
+          function cambiarCant(delta) {
+            const input = document.getElementById('cant-input');
+            let v = parseInt(input.value) || 1;
+            v = Math.max(1, v + delta);
+            input.value = v;
+          }
+          </script>
+          {% else %}
+          <div class="cat-alert cat-alert-info" style="font-size:.85rem; padding:.5rem;">
+            <a href="{{ url_for('catalogo.login') }}">Ingresa a tu cuenta</a> para agregar productos.
+          </div>
+          {% endif %}
+          
+          <div class="d-flex gap-3 flex-wrap mt-2">
+            <a href="{{ url_for('catalogo.index') }}" class="cat-btn cat-btn-outline" style="padding:.5rem 1.2rem; font-size:.85rem;"><i class="bi bi-arrow-left"></i> Seguir comprando</a>
+          </div>
+          <div class="mt-4 pt-3" style="border-top:1px solid var(--cat-border);">
+            <p class="small text-muted-cat mb-1"><i class="bi bi-truck"></i> Envíos a todo el país.</p>
+            <p class="small text-muted-cat mb-0"><i class="bi bi-shield-check"></i> Compra protegida.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARRUSEL DE RECOMENDADOS -->
+{% if relacionados %}
+<div style="border-top:1px solid var(--cat-border); padding-top:2rem; margin-top:1rem;">
+  <div class="container">
+    <h3 style="font-weight:300; font-size:1.4rem; margin-bottom:1rem; color:var(--cat-text);">
+      <i class="bi bi-stars text-warning"></i> Sumá a tu pedido
+    </h3>
+    
+    <div style="display:flex; overflow-x:auto; gap:1rem; padding-bottom:1rem; scroll-snap-type:x mandatory;">
+      {% for rel in relacionados %}
+      <div class="carrusel-card" style="scroll-snap-align:start; background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:10px; overflow:hidden; display:flex; flex-direction:column;">
+        <a href="{{ url_for('catalogo.producto_detalle', id=rel.id) }}" style="text-decoration:none; color:inherit; display:flex; flex-direction:column; flex-grow:1;">
+          <div style="aspect-ratio:1; background:var(--cat-surface-2); display:flex; align-items:center; justify-content:center;">
+            {% if rel.foto %}<img src="{{ url_for('productos_ver_foto', nombre=rel.foto) }}" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}<i class="bi bi-image" style="font-size:1.5rem; color:var(--cat-border);"></i>{% endif %}
+          </div>
+          <div style="padding:.75rem .75rem .25rem .75rem; flex-grow:1;">
+            <div style="font-weight:500; font-size:.85rem; line-height:1.2; margin-bottom:.25rem;">{{ rel.nombre }}</div>
+            <div style="color:var(--cat-accent); font-weight:600; font-size:.95rem;">{{ rel.precio|pesos }}</div>
+          </div>
+        </a>
+        <div style="padding:0 .75rem .75rem .75rem;">
+          <button class="cat-btn w-100 text-center" style="padding:.4rem; font-size:.75rem;" onclick="addToCartAjax({{ rel.id }}, 1)">
+            <i class="bi bi-cart-plus"></i> Añadir
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+'''
+
+APP118_PY = r'''
+# Modulo vacio para mantener la cadena de imports
+pass
+'''
+
+RUN_BAT = '''@echo off
+cd /d "%~dp0"
+call venv\\Scripts\\activate
+python -c "import app48; from app49 import catalogo_bp; import app51; import app53; import app55; import app57; import app61; import app63; import app64; import app65; import app66; import app67; import app88; import app93; import app95; import app110; import app117; import app118; app48.app.register_blueprint(catalogo_bp); app48.app.run(host='127.0.0.1', port=5000, debug=True)"
+pause
+'''
+
+def main():
+    print("=== Upgrade 118: Achicar vista de detalle de producto ===")
+    escribir('templates/catalogo/producto.html', CATALOGO_PRODUCTO)
+    escribir('app118.py', APP118_PY)
+    
+    with open(os.path.join(BASE, 'run.bat'), 'w', encoding='utf-8') as f:
+        f.write(RUN_BAT)
+        
+    print("")
+    print("=== LISTO ===")
+    print("Ejecuta: run.bat y apreta Ctrl+F5 en el navegador")
+
+if __name__ == '__main__':
+    main()

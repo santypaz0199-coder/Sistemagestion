@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Nueva compra{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Nueva compra</h4>
+<a href="{{ url_for('compras_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<form method="post">
+<div class="card shadow-sm mb-3"><div class="card-body"><div class="row g-3">
+<div class="col-md-6"><label class="form-label">Proveedor</label><select name="proveedor_id" class="form-select"><option value="">--</option>{% for p in proveedores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" value="{{ hoy }}"></div>
+<div class="col-md-3"><label class="form-label">Notas</label><input name="notas" class="form-control"></div>
+</div></div></div>
+<div class="card shadow-sm mb-3"><div class="card-body">
+<div class="d-flex justify-content-between align-items-center mb-2"><h6 class="mb-0">Productos</h6><button type="button" class="btn btn-sm btn-outline-secondary" onclick="addItem()"><i class="bi bi-plus-lg"></i> Agregar</button></div>
+<table class="table table-sm align-middle mb-0"><thead><tr><th>Producto</th><th width="100">Cant.</th><th width="130">Costo unit.</th><th width="120" class="text-end">Subtotal</th><th width="40"></th></tr></thead><tbody id="items-body"></tbody></table>
+</div></div>
+<div class="card shadow-sm mb-3"><div class="card-body"><div class="row"><div class="col-md-6 offset-md-6">
+<table class="table table-sm mb-0"><tr class="fw-bold"><td>Total:</td><td class="text-end" id="total-view">$0.00</td></tr></table>
+</div></div></div></div>
+<button class="btn btn-dark btn-lg">Registrar compra y sumar stock</button>
+</form>
+<template id="item-template"><tr class="item-row">
+<td><select name="producto_id" class="form-select form-select-sm" onchange="onProdChange(this)" required><option value="">--</option>{% for p in productos %}<option value="{{ p.id }}" data-costo="{{ p.costo }}">{{ p.nombre }} (stock: {{ '%g'|format(p.stock_actual) }})</option>{% endfor %}</select></td>
+<td><input type="number" step="0.01" min="0.01" name="cantidad" class="form-control form-control-sm" value="1" onchange="updateTotals()" required></td>
+<td><input type="number" step="0.01" min="0" name="costo" class="form-control form-control-sm" value="0" onchange="updateTotals()" required></td>
+<td class="text-end subtotal">$0.00</td>
+<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)"><i class="bi bi-trash"></i></button></td>
+</tr></template>
+<script>
+function addItem(){const t=document.getElementById('item-template');document.getElementById('items-body').appendChild(t.content.cloneNode(true));}
+function removeItem(b){b.closest('tr').remove();updateTotals();}
+function onProdChange(s){const o=s.options[s.selectedIndex];s.closest('tr').querySelector('[name="costo"]').value=o.dataset.costo||0;updateTotals();}
+function updateTotals(){let sub=0;document.querySelectorAll('.item-row').forEach(r=>{const c=parseFloat(r.querySelector('[name="cantidad"]').value)||0;const co=parseFloat(r.querySelector('[name="costo"]').value)||0;const s=c*co;r.querySelector('.subtotal').textContent='$'+s.toFixed(2);sub+=s;});
+document.getElementById('total-view').textContent='$'+sub.toFixed(2);}
+document.addEventListener('DOMContentLoaded',()=>{addItem();});
+</script>
+{% endblock %}

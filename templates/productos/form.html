@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Producto{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">{{ 'Editar' if producto else 'Nuevo' }} producto</h4>
+<a href="{{ url_for('productos_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+{% set v = valores if valores else (producto if producto else {}) %}
+<div class="card shadow-sm"><div class="card-body">
+<form method="post" enctype="multipart/form-data">
+<div class="row g-3">
+
+<div class="col-md-4">
+<label class="form-label">SKU</label>
+<input name="sku" class="form-control" value="{{ v.get('sku') or '' }}">
+</div>
+<div class="col-md-8">
+<label class="form-label">Nombre *</label>
+<input name="nombre" class="form-control" required value="{{ v.get('nombre') or '' }}">
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Costo del producto</label>
+<input type="number" step="0.01" name="costo" id="costo-input" class="form-control" value="{{ v.get('costo', 0) or 0 }}" onchange="updateMargen()">
+</div>
+<div class="col-md-4">
+<label class="form-label">Precio de venta</label>
+<input type="number" step="0.01" name="precio" id="precio-input" class="form-control" value="{{ v.get('precio', 0) or 0 }}" onchange="updateMargen()">
+</div>
+<div class="col-md-4">
+<label class="form-label">Stock minimo</label>
+<input type="number" step="0.01" name="stock_minimo" class="form-control" value="{{ v.get('stock_minimo', 0) or 0 }}">
+</div>
+
+{% if not producto %}
+<div class="col-md-4">
+<label class="form-label">Stock inicial</label>
+<input type="number" step="0.01" name="stock_actual" class="form-control" value="0">
+</div>
+{% endif %}
+
+<div class="col-md-4">
+<label class="form-label">Peso del producto</label>
+<div class="input-group">
+<input type="number" step="0.01" min="0" name="peso_valor" class="form-control" value="{{ v.get('peso_valor', 0) or 0 }}">
+<select name="peso_unidad" class="form-select" style="max-width:80px;">
+<option value="kg" {% if (v.get('peso_unidad') or 'kg') == 'kg' %}selected{% endif %}>kg</option>
+<option value="g" {% if v.get('peso_unidad') == 'g' %}selected{% endif %}>g</option>
+</select>
+</div>
+</div>
+
+<div class="col-md-8">
+<label class="form-label">Categoria</label>
+<select name="categoria_id" class="form-select">
+<option value="">— Sin categoria —</option>
+{% for p in padres %}
+<option value="{{ p.id }}" {% if v.get('categoria_id') == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+{% for h in hijos.get(p.id, []) %}
+<option value="{{ h.id }}" {% if v.get('categoria_id') == h.id %}selected{% endif %}>&nbsp;&nbsp;— {{ h.nombre }}</option>
+{% endfor %}
+{% endfor %}
+</select>
+</div>
+
+<!-- CONFIGURACION DEL CARRUSEL -->
+<div class="col-12 mt-4">
+<div class="border rounded p-3" style="background:#f8f9fc; border-left: 4px solid #8b5cf6 !important;">
+<div class="form-check form-switch mb-3">
+<input class="form-check-input" type="checkbox" name="mostrar_carrusel_recomendados" id="mostrar_carrusel" value="1" {% if v.get('mostrar_carrusel_recomendados') %}checked{% endif %}>
+<label class="form-check-label fw-bold text-dark" for="mostrar_carrusel">Mostrar carrusel 'Sumá a tu pedido' (Recomendados)</label>
+</div>
+<div class="form-text mb-2">Si está activo, los productos seleccionados abajo aparecerán como sugerencia cuando el cliente entre a este producto.</div>
+<label class="form-label fw-semibold small text-primary">Seleccioná los productos recomendados:</label>
+<select name="relacionados" class="form-select" multiple size="5" style="background:#fff;">
+{% for tp in todos_productos %}
+<option value="{{ tp.id }}" {% if tp.id in relacionados_actuales %}selected{% endif %}>{{ tp.nombre }}</option>
+{% endfor %}
+</select>
+<div class="form-text text-danger mt-1"><i class="bi bi-info-circle"></i> Importante: Mantené apretada la tecla <strong>Ctrl</strong> (o Cmd en Mac) para elegir varios productos de la lista.</div>
+</div>
+</div>
+
+<div class="col-12 mt-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" name="mostrar_en_catalogo" id="mostrar_en_catalogo" value="1" {% if v.get('mostrar_en_catalogo') != 0 %}checked{% endif %}>
+<label class="form-check-label fw-semibold" for="mostrar_en_catalogo">Mostrar en el catálogo público (B2B)</label>
+</div>
+</div>
+
+<div class="col-12 mt-3">
+<label class="form-label">Foto del producto</label>
+<div class="d-flex align-items-start gap-3">
+{% if producto and producto.get('foto') %}
+<div>
+<img src="{{ url_for('productos_ver_foto', nombre=producto.foto) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;">
+<div class="form-check mt-2">
+<input class="form-check-input" type="checkbox" name="eliminar_foto" value="1" id="eliminar_foto">
+<label class="form-check-label small text-danger" for="eliminar_foto">Eliminar foto actual</label>
+</div>
+</div>
+{% endif %}
+<div class="flex-grow-1">
+<input type="file" name="foto" class="form-control" accept="image/png,image/jpeg,image/webp,image/gif">
+</div>
+</div>
+</div>
+
+<div class="col-12">
+<div class="border rounded p-3" style="background:#f8f9fc;">
+<div class="form-check mb-2">
+<input class="form-check-input" type="checkbox" name="tiene_costo_variable" id="tiene_cv" {% if v.get('tiene_costo_variable') %}checked{% endif %} onchange="toggleCV()">
+<label class="form-check-label fw-semibold" for="tiene_cv">
+<i class="bi bi-box"></i> Este producto tiene costo variable adicional
+</label>
+</div>
+<div id="bloque-cv" class="row g-2 mt-1" {% if not v.get('tiene_costo_variable') %}style="display:none;"{% endif %}>
+<div class="col-md-4">
+<label class="form-label">Costo variable por unidad</label>
+<input type="number" step="0.01" min="0" name="costo_variable_unitario" id="cv-input" class="form-control" value="{{ v.get('costo_variable_unitario', 0) or 0 }}" onchange="updateMargen()">
+</div>
+<div class="col-md-8">
+<div class="border rounded p-2" style="background:#fff;">
+<div class="small text-muted mb-1">Costo total unitario</div>
+<div class="fs-5 fw-semibold" id="costo-total-view">$0.00</div>
+<div class="small" id="margen-view"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="mt-4"><button class="btn btn-dark">Guardar</button></div>
+</form></div></div>
+
+<script>
+function toggleCV() {
+  const check = document.getElementById('tiene_cv');
+  document.getElementById('bloque-cv').style.display = check.checked ? 'flex' : 'none';
+  if (!check.checked) { document.getElementById('cv-input').value = 0; }
+  updateMargen();
+}
+function updateMargen() {
+  const costo = parseFloat(document.getElementById('costo-input').value) || 0;
+  const cv = document.getElementById('tiene_cv').checked ? (parseFloat(document.getElementById('cv-input').value) || 0) : 0;
+  const precio = parseFloat(document.getElementById('precio-input').value) || 0;
+  const total = costo + cv;
+  document.getElementById('costo-total-view').textContent = '$' + total.toFixed(2);
+  const margen_view = document.getElementById('margen-view');
+  if (precio > 0) {
+    const margen = precio - total;
+    const pct = (margen / precio * 100);
+    const color = margen >= 0 ? 'text-success' : 'text-danger';
+    margen_view.className = 'small ' + color;
+    margen_view.innerHTML = 'Margen: <strong>$' + margen.toFixed(2) + '</strong> (' + pct.toFixed(1) + '%)';
+  } else { margen_view.textContent = ''; }
+}
+document.addEventListener('DOMContentLoaded', () => { updateMargen(); });
+</script>
+{% endblock %}

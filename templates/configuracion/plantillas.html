@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Plantillas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Plantillas de email</h4>
+<a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr><th>Plantilla</th><th>Se envia con el boton</th><th class="text-end"></th></tr></thead>
+<tbody>
+{% for tipo, nombre, boton in tipos %}
+<tr><td class="fw-semibold">{{ nombre }}</td><td class="text-muted small">{{ boton }}</td>
+<td class="text-end"><a href="{{ url_for('configuracion_plantilla_editar', tipo=tipo) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a></td></tr>
+{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

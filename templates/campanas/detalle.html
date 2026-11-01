@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Campaña #{{ campana.id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">{{ campana.nombre }}</h4>
+<div class="text-muted small">Campaña #{{ campana.id }} · {{ campana.asunto or 'Sin asunto' }}</div>
+</div>
+<a href="{{ url_for('campanas_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row g-3 mb-3">
+<div class="col-md-4"><div class="card-kpi"><div class="kpi-label">Enviados OK</div><div class="kpi-value text-success">{{ campana.total_enviados or 0 }}</div></div></div>
+<div class="col-md-4"><div class="card-kpi"><div class="kpi-label">Errores</div><div class="kpi-value {% if campana.total_errores %}text-danger{% endif %}">{{ campana.total_errores or 0 }}</div></div></div>
+<div class="col-md-4"><div class="card-kpi"><div class="kpi-label">Estado</div><div class="kpi-value" style="font-size:1.2rem;">
+{% if campana.estado == 'enviada' %}<span class="badge bg-success">Enviada</span>
+{% elif campana.estado == 'enviando' %}<span class="badge bg-info text-dark">Enviando...</span>
+{% else %}<span class="badge bg-secondary">Borrador</span>{% endif %}
+</div></div></div>
+</div>
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+<h6 class="mb-2">Mensaje enviado</h6>
+<div class="small text-muted mb-1">De: <strong>{{ campana.remitente or '—' }}</strong></div>
+<div class="small text-muted mb-2">Asunto: <strong>{{ campana.asunto }}</strong></div>
+<div class="border rounded p-3 bg-light" style="white-space:pre-wrap; font-size:.9rem; max-height:300px; overflow-y:auto;">{{ campana.cuerpo_html }}</div>
+</div></div>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-sm mb-0">
+<thead class="table-light"><tr><th>Fecha</th><th>Cliente</th><th>Email</th><th>Estado</th><th>Error</th></tr></thead>
+<tbody>
+{% for e in envios %}
+<tr>
+<td class="small text-muted">{{ e.fecha[:16] if e.fecha else '' }}</td>
+<td class="small">{{ e.nombre_completo or '—' }}</td>
+<td class="small">{{ e.destinatario }}</td>
+<td>{% if e.estado == 'ok' %}<span class="badge bg-success">OK</span>{% else %}<span class="badge bg-danger">Error</span>{% endif %}</td>
+<td class="small text-danger">{{ e.error or '' }}</td>
+</tr>
+{% else %}
+<tr><td colspan="5" class="text-center text-muted py-4">Sin envios registrados.</td></tr>
+{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Categorias de gastos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Categorias de gastos</h4>
+<a href="{{ url_for('gastos_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<div class="row g-3">
+<div class="col-md-5"><div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3">Nueva categoria</h6>
+<form method="post"><div class="input-group"><input name="nombre" class="form-control" placeholder="Ej: Envios" required><button class="btn btn-dark">Crear</button></div></form>
+</div></div></div>
+<div class="col-md-7"><div class="card shadow-sm"><div class="table-responsive">
+<table class="table mb-0"><thead class="table-light"><tr><th>Categoria</th><th class="text-end"></th></tr></thead><tbody>
+{% for c in categorias %}<tr><td>{{ c.nombre }}</td><td class="text-end">
+<form method="post" action="{{ url_for('categorias_gastos_eliminar', id=c.id) }}" class="d-inline" onsubmit="return confirm('Desactivar?')"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+</td></tr>{% else %}<tr><td colspan="2" class="text-center text-muted py-4">Sin categorias.</td></tr>{% endfor %}
+</tbody></table></div></div></div>
+</div>
+{% endblock %}

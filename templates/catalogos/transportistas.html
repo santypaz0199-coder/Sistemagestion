@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Transportistas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Transportistas</h4>
+<div class="text-muted small">Configura la URL base de seguimiento. El sistema le agrega el numero de guia automaticamente.</div>
+</div>
+<a href="{{ url_for('catalogos_index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-plus-circle"></i> Nuevo transportista</h6>
+<form method="post" action="{{ url_for('transportistas_nuevo') }}">
+<div class="mb-2">
+<label class="form-label small">Nombre *</label>
+<input name="nombre" class="form-control" required placeholder="Ej: OCA">
+</div>
+<div class="mb-2">
+<label class="form-label small">URL base de seguimiento</label>
+<input name="url_seguimiento" class="form-control" placeholder="https://ejemplo.com/track/">
+<div class="form-text">
+El sistema <strong>agrega el numero de guia al final automaticamente</strong>. Ejemplo:
+<ul class="mb-0 mt-1 ps-3" style="font-size:.75rem;">
+<li>URL base: <code>https://viacargo.com.ar/seguimiento-de-envio/</code></li>
+<li>Guia <code>999039474109</code> → <code>https://viacargo.com.ar/seguimiento-de-envio/999039474109</code></li>
+</ul>
+Opcionalmente podes usar <code>{guia}</code> como placeholder si la URL no termina con el numero.
+</div>
+</div>
+<button class="btn btn-dark w-100">Crear transportista</button>
+</form>
+</div></div>
+</div>
+
+<div class="col-md-8">
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr>
+<th>Nombre</th><th>URL base</th><th class="text-end">Envios</th><th>Estado</th><th class="text-end">Acciones</th>
+</tr></thead>
+<tbody>
+{% for t in transportistas %}
+<tr class="{% if not t.activo %}text-muted{% endif %}">
+<td class="fw-semibold">{{ t.nombre }}</td>
+<td class="small text-muted">{% if t.url_seguimiento %}<code style="font-size:.7rem;">{{ t.url_seguimiento[:60] }}{% if t.url_seguimiento|length > 60 %}...{% endif %}</code>{% else %}—{% endif %}</td>
+<td class="text-end">{{ t.total_envios }}</td>
+<td>
+{% if t.activo %}<span class="badge bg-success">Activo</span>
+{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
+</td>
+<td class="text-end text-nowrap">
+<button type="button" class="btn btn-sm btn-outline-secondary" onclick='openEditarTransp({{ t.id }}, {{ t.nombre|tojson }}, {{ (t.url_seguimiento or "")|tojson }})' title="Editar"><i class="bi bi-pencil"></i></button>
+<form method="post" action="{{ url_for('transportistas_toggle', id=t.id) }}" class="d-inline">
+<button class="btn btn-sm btn-outline-secondary" title="{% if t.activo %}Desactivar{% else %}Activar{% endif %}">
+<i class="bi bi-{% if t.activo %}pause{% else %}play{% endif %}"></i>
+</button>
+</form>
+<form method="post" action="{{ url_for('transportistas_eliminar', id=t.id) }}" class="d-inline"
+      onsubmit="return confirm('{% if t.total_envios > 0 %}Tiene {{ t.total_envios }} envios. Se desactivara.{% else %}Eliminar definitivamente?{% endif %}')">
+<button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+</div>
+</div>
+
+<div class="card shadow-sm mt-3"><div class="card-body">
+<h6 class="mb-2"><i class="bi bi-info-circle"></i> Como funciona el seguimiento</h6>
+<p class="small text-muted mb-2">El link de seguimiento se construye automaticamente asi:</p>
+<ul class="small text-muted mb-0">
+<li>Si la URL base termina en <code>/</code> → se agrega la guia directo: <code>https://ejemplo.com/track/123456</code></li>
+<li>Si la URL base NO termina en <code>/</code> → tambien se agrega: <code>https://ejemplo.com/track/123456</code></li>
+<li>Si la URL contiene <code>{guia}</code> → se reemplaza: <code>https://ejemplo.com/track/{guia}</code> → <code>https://ejemplo.com/track/123456</code></li>
+</ul>
+</div></div>
+
+<!-- Modal editar transportista -->
+<div class="modal fade" id="editarTranspModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<form id="editar-transp-form" method="post">
+<div class="modal-header"><h6 class="modal-title">Editar transportista</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="mb-2">
+<label class="form-label">Nombre *</label>
+<input name="nombre" id="transp-nombre" class="form-control" required>
+</div>
+<div class="mb-2">
+<label class="form-label">URL base de seguimiento</label>
+<input name="url_seguimiento" id="transp-url" class="form-control" placeholder="https://ejemplo.com/track/">
+<div class="form-text">El sistema agrega el numero de guia al final. Ejemplo: <code>https://viacargo.com.ar/seguimiento-de-envio/</code></div>
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="submit" class="btn btn-primary">Guardar cambios</button>
+</div>
+</form></div></div></div>
+
+<script>
+function openEditarTransp(id, nombre, url) {
+  document.getElementById('editar-transp-form').action = '/catalogos/transportistas/' + id + '/editar';
+  document.getElementById('transp-nombre').value = nombre;
+  document.getElementById('transp-url').value = url || '';
+  new bootstrap.Modal(document.getElementById('editarTranspModal')).show();
+}
+</script>
+{% endblock %}

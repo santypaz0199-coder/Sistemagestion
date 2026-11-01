@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Editar plantilla{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Editar plantilla: {{ tipo }}</h4>
+<a href="{{ url_for('configuracion_plantillas') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<div class="row g-3">
+<div class="col-md-8"><div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="mb-3"><label class="form-label">Asunto</label><input name="asunto" class="form-control" value="{{ cfg.asunto }}"></div>
+<div class="mb-3"><label class="form-label">Cuerpo</label><textarea name="cuerpo" rows="18" class="form-control" style="font-family: monospace; font-size: .85rem;">{{ cfg.cuerpo }}</textarea></div>
+<button class="btn btn-dark">Guardar plantilla</button>
+</form>
+</div></div></div>
+<div class="col-md-4"><div class="card shadow-sm"><div class="card-body">
+<h6>Variables disponibles</h6>
+<p class="text-muted small">Copia y pega donde corresponda:</p>
+<ul class="list-unstyled small mb-0">
+{% for v in variables %}<li><code>{&#123;{{ v }}&#125;}</code></li>{% endfor %}
+</ul>
+<hr>
+<p class="small text-muted mb-0">Las variables se reemplazan automaticamente al enviar el email.</p>
+</div></div></div>
+</div>
+{% endblock %}

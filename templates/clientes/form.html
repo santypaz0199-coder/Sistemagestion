@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Cliente{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">{{ 'Editar' if cliente else 'Nuevo' }} cliente</h4>
+<a href="{{ url_for('clientes_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+{% set v = valores if valores else (cliente if cliente else {}) %}
+<div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Nombre completo *</label>
+<input name="nombre_completo" class="form-control" required value="{{ v.get('nombre_completo') or '' }}">
+</div>
+<div class="col-md-3">
+<label class="form-label">Tipo doc</label>
+<select name="tipo_doc" class="form-select">
+<option value="">--</option>
+{% for t in ['CUIT','CUIL','DNI'] %}
+<option value="{{ t }}" {% if v.get('tipo_doc') == t %}selected{% endif %}>{{ t }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-3">
+<label class="form-label">Numero</label>
+<input name="nro_doc" class="form-control" value="{{ v.get('nro_doc') or '' }}">
+</div>
+<div class="col-md-6">
+<label class="form-label">Email</label>
+<input type="email" name="email" class="form-control" value="{{ v.get('email') or '' }}">
+</div>
+<div class="col-md-6">
+<label class="form-label">Telefono</label>
+<input name="telefono" class="form-control" value="{{ v.get('telefono') or '' }}">
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Provincia</label>
+<select name="provincia_id" id="provincia-select" class="form-select">
+<option value="">— Sin provincia —</option>
+{% for p in provincias %}
+<option value="{{ p.id }}" {% if v.get('provincia_id') == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Localidad</label>
+<div class="input-group">
+<select name="localidad_id" id="localidad-select" class="form-select" {% if not v.get('provincia_id') %}disabled{% endif %}>
+<option value="">— Sin localidad —</option>
+{% if v.get('provincia_id') and localidades_por_provincia.get(v.get('provincia_id')) %}
+{% for l in localidades_por_provincia[v.get('provincia_id')] %}
+<option value="{{ l.id }}" {% if v.get('localidad_id') == l.id %}selected{% endif %}>{{ l.nombre }}</option>
+{% endfor %}
+{% endif %}
+</select>
+<button type="button" class="btn btn-outline-secondary" id="btn-add-localidad" onclick="abrirAgregarLocalidad()" title="Agregar localidad que falta"><i class="bi bi-plus-lg"></i></button>
+</div>
+<div class="form-text">¿No esta tu localidad? Click en +</div>
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Codigo postal</label>
+<input name="codigo_postal" class="form-control" value="{{ v.get('codigo_postal') or '' }}">
+</div>
+
+{% if current_user.es_admin %}
+<div class="col-md-8">
+<label class="form-label">Vendedor (dueño de la cartera)</label>
+<select name="vendedor_id" class="form-select">
+<option value="">— Asignar a mi (admin) —</option>
+{% for u in vendedores %}
+<option value="{{ u.id }}" {% if v.get('vendedor_id') == u.id %}selected{% endif %}>{{ u.nombre }} ({{ u.rol }})</option>
+{% endfor %}
+</select>
+<div class="form-text">Solo el admin puede reasignar clientes entre vendedores.</div>
+</div>
+{% else %}
+<input type="hidden" name="vendedor_id" value="{{ current_user.id }}">
+<div class="col-md-8">
+<label class="form-label">Vendedor</label>
+<div class="form-control-plaintext"><span class="badge bg-secondary">{{ current_user.nombre }}</span></div>
+<div class="form-text">Tu eres el dueño de este cliente.</div>
+</div>
+{% endif %}
+
+<div class="col-md-12">
+<label class="form-label d-block">Tags *</label>
+<div class="form-check form-check-inline">
+<input class="form-check-input" type="checkbox" name="es_minorista" id="es_minorista" {% if v.get('es_minorista') %}checked{% endif %}>
+<label class="form-check-label" for="es_minorista">Minorista</label>
+</div>
+<div class="form-check form-check-inline">
+<input class="form-check-input" type="checkbox" name="es_mayorista" id="es_mayorista" {% if v.get('es_mayorista') %}checked{% endif %}>
+<label class="form-check-label" for="es_mayorista">Mayorista</label>
+</div>
+<div class="form-text">Un cliente puede ser ambos a la vez.</div>
+</div>
+<div class="col-12">
+<label class="form-label">Notas</label>
+<textarea name="notas" class="form-control" rows="2">{{ v.get('notas') or '' }}</textarea>
+</div>
+</div>
+<div class="mt-4"><button class="btn btn-dark">Guardar</button></div>
+</form></div></div>
+
+<div class="modal fade" id="addLocalidadModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h6 class="modal-title">Agregar nueva localidad</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<p class="text-muted small">Se agrega a la provincia seleccionada y queda disponible para todos.</p>
+<div class="mb-2">
+<label class="form-label">Provincia</label>
+<input id="add-prov-nombre" class="form-control" disabled>
+</div>
+<div class="mb-2">
+<label class="form-label">Nombre de la localidad *</label>
+<input id="add-loc-nombre" class="form-control" placeholder="Ej: Villa Nueva" required>
+</div>
+<div id="add-loc-error" class="alert alert-danger py-2 small d-none"></div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-primary" onclick="guardarLocalidad()">Agregar</button>
+</div>
+</div></div></div>
+
+<script>
+const LOCALIDADES = {{ localidades_por_provincia|tojson }};
+const provSelect = document.getElementById('provincia-select');
+const locSelect = document.getElementById('localidad-select');
+const btnAdd = document.getElementById('btn-add-localidad');
+
+function actualizarLocalidades() {
+  const pid = provSelect.value;
+  locSelect.innerHTML = '<option value="">— Sin localidad —</option>';
+  if (!pid) { locSelect.disabled = true; btnAdd.disabled = true; return; }
+  locSelect.disabled = false; btnAdd.disabled = false;
+  (LOCALIDADES[pid] || []).forEach(function(l) {
+    const opt = document.createElement('option');
+    opt.value = l.id; opt.textContent = l.nombre;
+    locSelect.appendChild(opt);
+  });
+}
+provSelect.addEventListener('change', actualizarLocalidades);
+if (!provSelect.value) btnAdd.disabled = true;
+if (provSelect.value) {
+  const currentLoc = locSelect.value;
+  actualizarLocalidades();
+  if (currentLoc) locSelect.value = currentLoc;
+}
+function abrirAgregarLocalidad() {
+  const pid = provSelect.value;
+  if (!pid) return;
+  document.getElementById('add-prov-nombre').value = provSelect.options[provSelect.selectedIndex].text;
+  document.getElementById('add-loc-nombre').value = '';
+  document.getElementById('add-loc-error').classList.add('d-none');
+  new bootstrap.Modal(document.getElementById('addLocalidadModal')).show();
+}
+async function guardarLocalidad() {
+  const nombre = document.getElementById('add-loc-nombre').value.trim();
+  const pid = provSelect.value;
+  const errEl = document.getElementById('add-loc-error');
+  errEl.classList.add('d-none');
+  if (!nombre) {
+    errEl.textContent = 'Escribi el nombre de la localidad';
+    errEl.classList.remove('d-none');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/localidades/agregar', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({nombre: nombre, provincia_id: parseInt(pid)})
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      errEl.textContent = data.error || 'Error al guardar';
+      errEl.classList.remove('d-none');
+      return;
+    }
+    if (!LOCALIDADES[pid]) LOCALIDADES[pid] = [];
+    if (!LOCALIDADES[pid].some(l => l.id === data.id)) LOCALIDADES[pid].push({id: data.id, nombre: data.nombre});
+    actualizarLocalidades();
+    locSelect.value = data.id;
+    bootstrap.Modal.getInstance(document.getElementById('addLocalidadModal')).hide();
+  } catch (e) {
+    errEl.textContent = 'Error de conexion: ' + e.message;
+    errEl.classList.remove('d-none');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Escala de Envíos B2B{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Escala de Envíos</h4>
+<div class="text-muted small">Configurá los costos de envío manualmente según el peso y el destino.</div>
+</div>
+<a href="{{ url_for('b2b_index', tab='cuentas') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver a B2B</a>
+</div>
+
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-plus-circle"></i> Nueva escala</h6>
+<form method="post">
+<div class="row g-2 mb-2">
+<div class="col-md-6">
+<label class="form-label small">Peso Desde (kg)</label>
+<input type="number" step="1" name="peso_desde" class="form-control" required placeholder="20">
+</div>
+<div class="col-md-6">
+<label class="form-label small">Peso Hasta (kg)</label>
+<input type="number" step="1" name="peso_hasta" class="form-control" required placeholder="30">
+</div>
+</div>
+<div class="mb-2">
+<label class="form-label small">Tipo de Destino</label>
+<select name="tipo_destino" class="form-select" required>
+<option value="sucursal">Sucursal (Retiro en agencia)</option>
+<option value="domicilio">Domicilio (Envío a casa)</option>
+<option value="ambos">Ambos (Mismo precio)</option>
+</select>
+</div>
+<div class="mb-3">
+<label class="form-label small">Precio del Envío ($)</label>
+<input type="number" step="0.01" name="precio" class="form-control" required placeholder="36000">
+</div>
+<button class="btn btn-dark w-100">Agregar Escala</button>
+</form>
+</div></div>
+</div>
+
+<div class="col-md-8">
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light">
+<tr>
+<th>Rango de Peso</th>
+<th>Destino</th>
+<th class="text-end">Costo de Envío</th>
+<th class="text-end">Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for e in escalas %}
+<tr>
+<td class="fw-semibold">{{ '%g'|format(e.peso_desde) }}kg a {{ '%g'|format(e.peso_hasta) }}kg</td>
+<td>
+{% if e.tipo_destino == 'ambos' %}
+<span class="badge bg-info text-dark">Ambos</span>
+{% elif e.tipo_destino == 'domicilio' %}
+<span class="badge bg-primary">Domicilio</span>
+{% else %}
+<span class="badge bg-secondary">Sucursal</span>
+{% endif %}
+</td>
+<td class="text-end fw-bold text-success">${{ '%.2f'|format(e.precio) }}</td>
+<td class="text-end">
+<form method="post" action="{{ url_for('b2b_envios_eliminar', id=e.id) }}" class="d-inline" onsubmit="return confirm('Eliminar esta escala?')">
+<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+</form>
+</td>
+</tr>
+{% else %}
+<tr><td colspan="4" class="text-center text-muted py-4">No hay escalas cargadas.</td></tr>
+{% endfor %}
+</tbody></table></div></div>
+</div>
+</div>
+{% endblock %}

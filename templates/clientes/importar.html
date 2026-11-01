@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Importar clientes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Importar clientes desde CSV</h4>
+<div class="text-muted small">Subi un archivo con los clientes. Podes previsualizar antes de confirmar.</div>
+</div>
+<a href="{{ url_for('clientes_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row g-3">
+<div class="col-md-7">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="mb-3"><i class="bi bi-file-earmark-arrow-up"></i> Subir archivo</h6>
+<form method="post" enctype="multipart/form-data">
+<div class="mb-3">
+<label class="form-label">Archivo CSV *</label>
+<input type="file" name="archivo" class="form-control" accept=".csv,text/csv" required>
+<div class="form-text">Maximo recomendado: 1000 clientes por importacion. Encoding UTF-8 o Latin-1. Separador coma o punto y coma.</div>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Asignar todos los clientes a</label>
+<select name="vendedor_id" class="form-select">
+<option value="{{ current_user.id }}">— A mi ({{ current_user.nombre }}) —</option>
+{% for v in vendedores %}
+<option value="{{ v.id }}">{{ v.nombre }} ({{ v.rol }})</option>
+{% endfor %}
+</select>
+<div class="form-text">Despues podes reasignar clientes individualmente.</div>
+</div>
+
+<input type="hidden" name="accion" value="preview">
+<button class="btn btn-primary"><i class="bi bi-eye"></i> Previsualizar</button>
+</form>
+</div></div>
+</div>
+
+<div class="col-md-5">
+<div class="card shadow-sm mb-3">
+<div class="card-body">
+<h6 class="mb-2"><i class="bi bi-download"></i> Plantilla</h6>
+<p class="text-muted small">Descarga el CSV de ejemplo con las cabeceras correctas y la lista de provincias validas.</p>
+<a href="{{ url_for('clientes_importar_plantilla') }}" class="btn btn-outline-dark btn-sm">
+<i class="bi bi-download"></i> Descargar plantilla
+</a>
+</div></div>
+
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="mb-2"><i class="bi bi-info-circle"></i> Columnas</h6>
+<table class="table table-sm small mb-0">
+<tr><td><code>nombre_completo</code></td><td>Obligatorio</td></tr>
+<tr><td><code>tipo_doc</code></td><td>DNI / CUIT / CUIL</td></tr>
+<tr><td><code>nro_doc</code></td><td>Sin puntos ni guiones</td></tr>
+<tr><td><code>email</code></td><td>—</td></tr>
+<tr><td><code>telefono</code></td><td>Con o sin +54</td></tr>
+<tr><td><code>provincia</code></td><td>Nombre exacto (ver plantilla)</td></tr>
+<tr><td><code>localidad</code></td><td>Si no existe, queda como texto</td></tr>
+<tr><td><code>codigo_postal</code></td><td>—</td></tr>
+<tr><td><code>es_minorista</code></td><td>1 o 0</td></tr>
+<tr><td><code>es_mayorista</code></td><td>1 o 0</td></tr>
+<tr><td><code>notas</code></td><td>Opcional</td></tr>
+</table>
+</div></div>
+</div>
+</div>
+{% endblock %}

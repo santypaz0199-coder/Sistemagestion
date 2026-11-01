@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Firma y datos empresa{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Firma, datos de empresa y logo</h4>
+<a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card shadow-sm"><div class="card-body">
+<form method="post" enctype="multipart/form-data">
+<div class="row g-3">
+
+<div class="col-md-4">
+<label class="form-label">Nombre empresa</label>
+<input name="empresa_nombre" class="form-control" value="{{ cfg.empresa_nombre or 'Familia Zaragoza ®' }}">
+</div>
+<div class="col-md-4">
+<label class="form-label">Telefono</label>
+<input name="empresa_telefono" class="form-control" value="{{ cfg.empresa_telefono }}">
+</div>
+<div class="col-md-4">
+<label class="form-label">Web</label>
+<input name="empresa_web" class="form-control" value="{{ cfg.empresa_web }}">
+</div>
+<div class="col-md-6">
+<label class="form-label">Email atencion al cliente</label>
+<input name="empresa_email" class="form-control" value="{{ cfg.empresa_email or 'hola@familiazaragoza.com' }}">
+</div>
+<div class="col-12">
+<label class="form-label">Firma de emails</label>
+<textarea name="firma_email" rows="5" class="form-control">{{ cfg.firma_email }}</textarea>
+</div>
+
+<div class="col-12 mt-3"><hr><h6 class="text-muted small">Logo de la empresa</h6></div>
+<div class="col-12">
+<div class="d-flex align-items-start gap-3">
+{% if tiene_logo %}
+<div class="text-center">
+<img src="{{ url_for('ver_logo_empresa') }}" style="max-width:180px; max-height:120px; border:1px solid #e8ecf3; border-radius:8px; padding:8px; background:#fff;">
+<div class="form-check mt-2">
+<input class="form-check-input" type="checkbox" name="eliminar_logo" value="1" id="eliminar_logo">
+<label class="form-check-label small text-danger" for="eliminar_logo">Eliminar logo</label>
+</div>
+</div>
+{% else %}
+<div style="width:180px;height:120px;border:2px dashed #e8ecf3;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">
+<i class="bi bi-image fs-1"></i>
+</div>
+{% endif %}
+<div class="flex-grow-1">
+<input type="file" name="logo" class="form-control" accept="image/*">
+<div class="form-text">PNG o SVG preferentemente (fondo transparente). Max 3 MB.</div>
+<div class="form-text">Se usa en impresiones, PDFs y emails.</div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="mt-4"><button class="btn btn-dark">Guardar todo</button></div>
+</form>
+</div></div>
+{% endblock %}

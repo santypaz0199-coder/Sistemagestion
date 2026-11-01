@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<title>{{ orden.numero_interno }} - {{ empresa.nombre }}</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #1f2937; margin: 0; padding: 40px; font-size: 13px; max-width: 800px; margin-left: auto; margin-right: auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
+.header .empresa h1 { margin: 0 0 6px 0; font-size: 22px; letter-spacing: -.02em; }
+.header .empresa .info { font-size: 11px; color: #4b5563; line-height: 1.7; }
+.header .orden-box { text-align: right; }
+.header .orden-box .num { font-size: 20px; font-weight: 700; }
+.header .orden-box .fecha { color: #6b7280; font-size: 12px; margin-top: 2px; }
+.header .orden-box .estado { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.estado-pendiente_pago { background: #fef3c7; color: #92400e; }
+.estado-pagado_sin_enviar { background: #cffafe; color: #155e75; }
+.estado-pagado_enviado { background: #d1fae5; color: #065f46; }
+.estado-cancelado { background: #e5e7eb; color: #4b5563; }
+.row { display: flex; gap: 24px; margin-bottom: 20px; }
+.col { flex: 1; }
+.box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
+.box h3 { margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+.box p { margin: 2px 0; line-height: 1.5; }
+.box .strong { font-weight: 600; }
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+table th { background: #f9fafb; text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+table .num { text-align: right; }
+.totales { margin-top: 20px; display: flex; justify-content: flex-end; }
+.totales table { width: 280px; }
+.totales .total-row td { font-size: 15px; font-weight: 700; border-top: 2px solid #1f2937; padding-top: 10px; }
+.totales .saldo { color: #dc2626; }
+.totales .pagado { color: #059669; }
+.firma { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 11px; line-height: 1.6; }
+.acciones { position: fixed; top: 20px; right: 20px; display: flex; gap: 8px; }
+.btn-accion { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.btn-imprimir { background: #3b5bdb; color: #fff; }
+.btn-cerrar { background: #e5e7eb; color: #1f2937; }
+.btn-accion:hover { opacity: .88; }
+@media print {
+  body { padding: 0; }
+  .acciones { display: none; }
+  .box { border: none; padding: 0; }
+  .header { border-bottom-width: 2px; }
+}
+</style></head>
+<body>
+
+<div class="acciones">
+<button class="btn-accion btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+<button class="btn-accion btn-cerrar" onclick="window.close()">✕ Cerrar</button>
+</div>
+
+<div class="header">
+<div class="empresa">
+{% if empresa_logo_nombre %}
+<div style="margin-bottom:8px;"><img src="{{ url_for('ver_logo_empresa') }}" style="max-height:60px; max-width:180px;"></div>
+{% endif %}
+<h1>{{ empresa.nombre }}</h1>
+<div class="info">
+{% if empresa.telefono %}📞 {{ empresa.telefono }}<br>{% endif %}
+{% if empresa.email %}✉ {{ empresa.email }}<br>{% endif %}
+{% if empresa.web %}🌐 {{ empresa.web }}{% endif %}
+</div>
+</div>
+<div class="orden-box">
+<div class="num">{{ orden.numero_interno }}</div>
+<div class="fecha">{{ orden.fecha }}</div>
+<div class="estado estado-{{ orden.estado }}">
+{{ {'pendiente_pago':'Pendiente pago','pagado_sin_enviar':'Pagado / Sin enviar','pagado_enviado':'Pagado / Enviado','cancelado':'Cancelado'}.get(orden.estado, orden.estado) }}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col"><div class="box">
+<h3>Cliente</h3>
+<p class="strong">{{ orden.cliente_nombre }}</p>
+{% if orden.cliente_doc %}<p>{{ orden.cliente_tipo_doc or '' }} {{ orden.cliente_doc }}</p>{% endif %}
+{% if orden.cliente_email %}<p>{{ orden.cliente_email }}</p>{% endif %}
+{% if orden.cliente_telefono %}<p>{{ orden.cliente_telefono }}</p>{% endif %}
+<p>{{ orden.cliente_provincia or '' }}{% if orden.cliente_localidad %}, {{ orden.cliente_localidad }}{% endif %}</p>
+</div></div>
+<div class="col"><div class="box">
+<h3>Datos del pedido</h3>
+<p><strong>Tipo:</strong> {{ orden.tipo|capitalize }}</p>
+<p><strong>Vendedor:</strong> {{ orden.vendedor_nombre }}</p>
+<p><strong>Canal:</strong> {{ orden.canal_nombre or '—' }}</p>
+<p><strong>Kilos totales:</strong> {{ '%.2f'|format(kilos_total) }} kg</p>
+</div></div>
+</div>
+
+{% if orden.destinatario_nombre or orden.nro_guia %}
+<div class="box" style="margin-bottom:20px;">
+<h3>Datos de envio</h3>
+{% if orden.tipo_envio %}
+<div class="mb-2" style="display:flex; gap:6px; flex-wrap:wrap;">
+{% if orden.tipo_envio == 'retira_deposito' %}
+<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;">RETIRA EN DEPOSITO</span>
+{% elif orden.tipo_envio == 'envio_personal' %}
+<span style="background:#cffafe;color:#155e75;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;">ENVIO PERSONAL</span>
+{% elif orden.tipo_envio == 'transporte' %}
+<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;">TRANSPORTE{% if orden.destino_tipo %} / {{ 'DOMICILIO' if orden.destino_tipo == 'domicilio' else 'SUCURSAL' }}{% endif %}</span>
+{% endif %}
+</div>
+{% endif %}
+{% if orden.destinatario_nombre %}<p><strong>Destinatario:</strong> {{ orden.destinatario_nombre }}</p>{% endif %}
+{% if orden.sucursal_detalle %}<p><strong>Sucursal:</strong> {{ orden.sucursal_detalle }}</p>{% endif %}
+{% if orden.destinatario_calle %}<p><strong>Direccion:</strong> {{ orden.destinatario_calle }}{% if orden.destinatario_localidad %}, {{ orden.destinatario_localidad }}{% endif %}{% if orden.destinatario_provincia %} ({{ orden.destinatario_provincia }}){% endif %}{% if orden.destinatario_cp %} CP {{ orden.destinatario_cp }}{% endif %}</p>{% endif %}
+{% if orden.transportista_nombre %}<p><strong>Transportista:</strong> {{ orden.transportista_nombre }}</p>{% endif %}
+{% if orden.nro_guia %}
+<p><strong>Nro guia:</strong> {{ orden.nro_guia }}</p>
+<div class="seguimiento-manual-hint" style="font-size:11px;color:#6b7280;margin-top:4px;">
+Si no podes acceder al link de seguimiento, copia el numero de guia y pegalo en el sitio del transportista.
+</div>
+{% endif %}
+{% if orden.destinatario_detalles %}<p><strong>Detalles:</strong> {{ orden.destinatario_detalles }}</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="box">
+<h3>Productos</h3>
+<table>
+<thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th></tr></thead>
+<tbody>
+{% for it in items %}
+<tr>
+<td>{{ it.producto_nombre }}{% if it.sku %} <span style="color:#9ca3af; font-size:11px;">({{ it.sku }})</span>{% endif %}</td>
+<td class="num">{{ '%g'|format(it.cantidad) }}</td>
+<td class="num">${{ '%.2f'|format(it.precio_unitario) }}</td>
+<td class="num">${{ '%.2f'|format(it.subtotal) }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<div class="totales">
+<table>
+<tr><td>Subtotal:</td><td class="num">${{ '%.2f'|format(orden.subtotal) }}</td></tr>
+{% if orden.descuento > 0 %}<tr><td>Descuento:</td><td class="num">-${{ '%.2f'|format(orden.descuento) }}</td></tr>{% endif %}
+<tr class="total-row"><td>Total:</td><td class="num">${{ '%.2f'|format(orden.total) }}</td></tr>
+{% if pagos %}
+<tr><td>Pagado:</td><td class="num pagado">${{ '%.2f'|format(total_pagado) }}</td></tr>
+<tr><td>Saldo:</td><td class="num {% if total_pagado < orden.total %}saldo{% else %}pagado{% endif %}">${{ '%.2f'|format(orden.total - total_pagado) }}</td></tr>
+{% endif %}
+</table>
+</div>
+
+{% if pagos %}
+<div class="box" style="margin-top:20px;">
+<h3>Pagos registrados</h3>
+<table>
+<thead><tr><th>Fecha</th><th>Medio</th><th class="num">Monto</th></tr></thead>
+<tbody>
+{% for p in pagos %}
+<tr><td>{{ p.fecha }}</td><td>{{ p.medio_nombre or '—' }}</td><td class="num">${{ '%.2f'|format(p.monto) }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+
+{% if orden.notas %}
+<div class="box" style="margin-top:20px;">
+<h3>Notas</h3>
+<p>{{ orden.notas }}</p>
+</div>
+{% endif %}
+
+<div class="firma">
+{{ empresa.nombre }}<br>
+Gracias por elegirnos
+</div>
+
+</body></html>

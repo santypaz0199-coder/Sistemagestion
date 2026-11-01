@@ -1,0 +1,117 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Carrito — Familia Zaragoza ®{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 style="font-weight:300;font-size:2rem;margin-bottom:2rem;">Mi pedido</h1>
+
+  {% if items %}
+  <div class="row g-4">
+    <div class="col-md-8">
+      
+      <div style="background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; margin:0; color:var(--cat-text);">
+          <thead>
+            <tr style="background:var(--cat-surface-2); border-bottom:1px solid var(--cat-border);">
+              <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem 1.5rem;text-align:left;font-weight:600;">Producto</th>
+              <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem 1.5rem;text-align:center;font-weight:600;">Cantidad</th>
+              <th style="color:var(--cat-text-muted);font-size:.75rem;text-transform:uppercase;padding:1rem 1.5rem;text-align:right;font-weight:600;">Subtotal</th>
+              <th style="width:50px;padding:1rem 1.5rem;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr style="border-bottom:1px solid var(--cat-border);">
+              <td style="padding:1.25rem 1.5rem;">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                  <div style="width:60px;height:60px;background:var(--cat-surface-2);border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                    {% if item.producto.foto %}
+                    <img src="{{ url_for('productos_ver_foto', nombre=item.producto.foto) }}" style="width:100%;height:100%;object-fit:cover;">
+                    {% else %}
+                    <i class="bi bi-image" style="color:#555;font-size:1.5rem;"></i>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div style="font-weight:600; font-size:1rem;">{{ item.producto.nombre }}</div>
+                    <div style="color:var(--cat-text-muted);font-size:.85rem;">{{ item.precio|pesos }} c/u</div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:1.25rem 1.5rem;text-align:center;vertical-align:middle;">
+                <form method="post" action="{{ url_for('catalogo.carrito_actualizar', producto_id=item.producto.id) }}" style="display:inline-flex;align-items:center;gap:.5rem;">
+                  <input type="number" name="cantidad" value="{{ item.cantidad|int }}" min="0" step="1" style="width:70px;background:var(--cat-surface-2);border:1px solid var(--cat-border);color:var(--cat-text);padding:.4rem;border-radius:6px;text-align:center;font-weight:600;">
+                  <button type="submit" style="background:none;border:none;color:var(--cat-accent);cursor:pointer;padding:.3rem;font-size:1.1rem;" title="Actualizar"><i class="bi bi-arrow-clockwise"></i></button>
+                </form>
+              </td>
+              <td style="padding:1.25rem 1.5rem;text-align:right;color:var(--cat-accent);font-weight:600;font-size:1.05rem;vertical-align:middle;">{{ item.subtotal|pesos }}</td>
+              <td style="padding:1.25rem 1.5rem;text-align:center;vertical-align:middle;">
+                <form method="post" action="{{ url_for('catalogo.carrito_quitar', producto_id=item.producto.id) }}" style="display:inline;">
+                  <button type="submit" style="background:none;border:none;color:#f87171;cursor:pointer;padding:.3rem;font-size:1.1rem;" onclick="return confirm('Quitar este producto?')" title="Quitar"><i class="bi bi-x-lg"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <form method="post" action="{{ url_for('catalogo.carrito_vaciar') }}" style="display:inline;">
+          <button type="submit" class="cat-btn cat-btn-outline" style="padding:.6rem 1.2rem;font-size:.85rem;" onclick="return confirm('Vaciar todo el carrito?')">Vaciar carrito</button>
+        </form>
+        <a href="{{ url_for('catalogo.index') }}" class="cat-btn cat-btn-outline" style="padding:.6rem 1.2rem;font-size:.85rem;">Seguir comprando</a>
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="col-md-4">
+      <div style="background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px; padding:1.5rem;">
+        <h6 style="color:var(--cat-text-muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em;margin-bottom:1.5rem;">Resumen del pedido</h6>
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:.75rem; color:var(--cat-text-muted);">
+          <span>Subtotal</span>
+          <span>{{ subtotal|pesos }}</span>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:.75rem; color:var(--cat-text-muted);">
+          <span>Peso total:</span>
+          <span><strong>{{ '%.1f'|format(info_envio.peso_total) }} kg</strong> ({{ info_envio.bultos }} bultos)</span>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:.75rem; color:var(--cat-text-muted);">
+          <span>Valor de envío</span>
+          <span>{{ info_envio.costo_envio|pesos }}</span>
+        </div>
+        
+        <hr style="border-color:var(--cat-border); margin:1.25rem 0;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <span style="font-weight:600; font-size:1.1rem;">Total a pagar</span>
+          <span style="color:var(--cat-accent); font-weight:700; font-size:1.4rem;">{{ (subtotal + info_envio.costo_envio)|pesos }}</span>
+        </div>
+        
+        {% if info_envio.mensaje_extra %}
+        <div style="background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:#fbbf24; padding:.75rem; border-radius:8px; font-size:.85rem; margin-bottom:1.5rem;">
+          <i class="bi bi-info-circle"></i> {{ info_envio.mensaje_extra }}
+        </div>
+        {% endif %}
+
+        {% if mayorista.estado == 'aprobado' %}
+        <a href="{{ url_for('catalogo.checkout') }}" class="cat-btn w-100 text-center" style="background:#c9a96e; color:#000; text-decoration:none; font-weight:700; padding:1rem;">Ir a pagar</a>
+        {% else %}
+        <div style="background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:#fbbf24; padding:.75rem; border-radius:8px; font-size:.85rem; text-align:center;">
+          <i class="bi bi-hourglass-split"></i> Tu cuenta esta pendiente de aprobacion.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:4rem 1rem; background:var(--cat-surface); border:1px solid var(--cat-border); border-radius:12px;">
+    <i class="bi bi-cart-x" style="font-size:4rem; color:var(--cat-border); display:block; margin-bottom:1rem;"></i>
+    <h3 style="font-weight:300; color:var(--cat-text-muted); margin-bottom:1.5rem;">Tu carrito esta vacio</h3>
+    <a href="{{ url_for('catalogo.index') }}" class="cat-btn">Ver catálogo</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

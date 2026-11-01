@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Verificar codigo - Sistema FZ{% endblock %}
+{% block content %}
+<div class="row justify-content-center" style="margin-top:10vh;">
+<div class="col-md-4">
+<div class="card shadow-sm" style="border-radius:20px;">
+<div class="card-body p-5 text-center">
+<i class="bi bi-envelope-check" style="font-size:3rem; color:#4f46e5; display:block; margin-bottom:1rem;"></i>
+<h4 class="mb-2" style="font-weight:800;">Verifica tu correo</h4>
+<p class="text-muted small mb-4">Ingresa el codigo de 6 digitos que enviamos a tu email.</p>
+
+<form method="post">
+<div class="mb-4">
+<input type="text" name="codigo" class="form-control text-center" style="font-size:2rem; letter-spacing:1rem; padding:.5rem;" maxlength="6" required autofocus placeholder="000000">
+</div>
+<button type="submit" class="btn btn-dark w-100">Verificar y Crear Cuenta</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

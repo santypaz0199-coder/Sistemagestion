@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Configuracion{% endblock %}
+{% block content %}
+<h4 class="mb-4">Configuracion</h4>
+<div class="row g-3">
+<div class="col-md-4"><a href="{{ url_for('configuracion_medios_envio') }}" class="text-decoration-none"><div class="card shadow-sm h-100" style="border-left:3px solid #f59e0b;"><div class="card-body">
+<i class="bi bi-truck fs-2 text-warning"></i>
+<h6 class="mt-2">Medios de Envío</h6>
+<p class="text-muted small mb-0">Transportistas y tarifas por kilo o manuales.</p>
+</div></div></a></div>
+<div class="col-md-4"><a href="{{ url_for('configuracion_datos_pago') }}" class="text-decoration-none"><div class="card shadow-sm h-100" style="border-left:3px solid #10b981;"><div class="card-body">
+<i class="bi bi-bank fs-2 text-success"></i>
+<h6 class="mt-2">Datos de pago</h6>
+<p class="text-muted small mb-0">Alias, CBU, titular para transferencias del catalogo.</p>
+</div></div></a></div>
+
+<div class="col-md-4"><a href="{{ url_for('catalogos_index') }}" class="text-decoration-none"><div class="card shadow-sm h-100" style="border-left:3px solid #8b5cf6;"><div class="card-body">
+<i class="bi bi-tags fs-2" style="color:#8b5cf6;"></i>
+<h6 class="mt-2">Catálogos</h6>
+<p class="text-muted small mb-0">Canales de venta, medios de pago y transportistas.</p>
+</div></div></a></div>
+<div class="col-md-4"><a href="{{ url_for('configuracion_remitentes') }}" class="text-decoration-none"><div class="card shadow-sm h-100" style="border-left:3px solid #8b5cf6;"><div class="card-body">
+<i class="bi bi-envelope-paper fs-2" style="color:#8b5cf6;"></i>
+<h6 class="mt-2">Remitentes y SMTP</h6>
+<p class="text-muted small mb-0">Todos los correos en un solo lugar + servidor SMTP.</p>
+</div></div></a></div>
+
+<div class="col-md-4"><a href="{{ url_for('configuracion_smtp') }}" class="text-decoration-none"><div class="card shadow-sm h-100"><div class="card-body">
+<i class="bi bi-envelope-at fs-2 text-primary"></i>
+<h6 class="mt-2">Servidor de correo</h6>
+<p class="text-muted small mb-0">Host, puerto, usuario y contraseña de Mailrelay. Boton de prueba.</p>
+</div></div></a></div>
+<div class="col-md-4"><a href="{{ url_for('configuracion_firma') }}" class="text-decoration-none"><div class="card shadow-sm h-100"><div class="card-body">
+<i class="bi bi-pen fs-2 text-primary"></i>
+<h6 class="mt-2">Firma y datos de empresa</h6>
+<p class="text-muted small mb-0">Lo que aparece al pie de cada mail.</p>
+</div></div></a></div>
+<div class="col-md-4"><a href="{{ url_for('configuracion_plantillas') }}" class="text-decoration-none"><div class="card shadow-sm h-100"><div class="card-body">
+<i class="bi bi-file-earmark-text fs-2 text-primary"></i>
+<h6 class="mt-2">Plantillas de email</h6>
+<p class="text-muted small mb-0">Asunto y cuerpo de las 5 notificaciones automaticas.</p>
+</div></div></a></div>
+</div>
+{% endblock %}

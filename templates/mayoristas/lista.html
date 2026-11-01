@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}B2B{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">B2B - Mayoristas</h4>
+<div class="text-muted small">Cuentas del catalogo publico y pagos pendientes</div>
+</div>
+<div class="d-flex gap-2">
+<a href="{{ url_for('b2b_envios') }}" class="btn btn-outline-dark btn-sm" style="margin-right: 8px;"><i class="bi bi-truck"></i> Escala de Envíos</a>
+<a href="{{ url_for('b2b_portada') }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-image"></i> Portada del Catálogo</a>
+<button type="button" class="btn btn-outline-primary btn-sm" onclick="copiarLinkCatalogo()">
+<i class="bi bi-share"></i> Compartir link del catalogo
+</button>
+<a href="/catalogo" target="_blank" class="btn btn-outline-secondary btn-sm">
+<i class="bi bi-box-arrow-up-right"></i> Abrir catalogo
+</a>
+</div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-pills mb-3">
+<li class="nav-item">
+<a class="nav-link {% if tab=='cuentas' %}active{% endif %}" href="{{ url_for('b2b_index', tab='cuentas') }}">
+<i class="bi bi-people"></i> Cuentas
+{% if counts.pendiente %}<span class="badge bg-warning text-dark ms-1">{{ counts.pendiente }}</span>{% endif %}
+</a>
+</li>
+<li class="nav-item">
+<a class="nav-link {% if tab=='pagos' %}active{% endif %}" href="{{ url_for('b2b_index', tab='pagos') }}">
+<i class="bi bi-cash-coin"></i> Pagos pendientes
+{% if pagos_pendientes_count %}<span class="badge bg-danger ms-1">{{ pagos_pendientes_count }}</span>{% endif %}
+</a>
+</li>
+</ul>
+
+<!-- Sub-tabs de cuentas -->
+<ul class="nav nav-pills mb-3" style="font-size:.85rem;">
+<li class="nav-item"><a class="nav-link {% if estado=='pendiente' %}active{% endif %}" href="{{ url_for('b2b_index', tab='cuentas', estado='pendiente') }}"><i class="bi bi-hourglass-split"></i> Pendientes ({{ counts.pendiente }})</a></li>
+<li class="nav-item"><a class="nav-link {% if estado=='aprobado' %}active{% endif %}" href="{{ url_for('b2b_index', tab='cuentas', estado='aprobado') }}"><i class="bi bi-check-circle"></i> Aprobadas ({{ counts.aprobado }})</a></li>
+<li class="nav-item"><a class="nav-link {% if estado=='rechazado' %}active{% endif %}" href="{{ url_for('b2b_index', tab='cuentas', estado='rechazado') }}"><i class="bi bi-x-circle"></i> Rechazadas ({{ counts.rechazado }})</a></li>
+<li class="nav-item"><a class="nav-link {% if estado=='todas' %}active{% endif %}" href="{{ url_for('b2b_index', tab='cuentas', estado='todas') }}">Todas</a></li>
+</ul>
+
+{% if cuentas %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light">
+<tr><th>Fecha</th><th>Nombre</th><th>Email</th><th>Telefono</th><th>CUIT</th><th>Estado</th><th class="text-end">Acciones</th></tr>
+</thead>
+<tbody>
+{% for c in cuentas %}
+<tr>
+<td class="small text-muted">{{ c.creado[:16] if c.creado else '' }}</td>
+<td class="fw-semibold">{{ c.nombre_completo }}</td>
+<td class="small">{{ c.email }}</td>
+<td class="small">{{ c.telefono or '—' }}</td>
+<td class="small">{{ c.cuit or '—' }}</td>
+<td>
+{% if c.estado == 'pendiente' %}<span class="badge bg-warning text-dark">Pendiente</span>
+{% elif c.estado == 'aprobado' %}<span class="badge bg-success">Aprobada</span>
+{% else %}<span class="badge bg-danger">Rechazada</span>{% endif %}
+</td>
+<td class="text-end text-nowrap">
+{% if c.estado == 'pendiente' %}
+<form method="post" action="{{ url_for('b2b_cuenta_aprobar', id=c.id) }}" class="d-inline" onsubmit="return confirm('Aprobar la cuenta de {{ c.nombre_completo }}? Se creara el cliente automaticamente.')">
+<button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i> Aprobar</button>
+</form>
+<button type="button" class="btn btn-sm btn-outline-danger" onclick="openRechazar({{ c.id }}, {{ c.nombre_completo|tojson }})"><i class="bi bi-x-lg"></i> Rechazar</button>
+{% elif c.estado == 'rechazado' %}
+<span class="small text-muted">{{ c.motivo_rechazo or '—' }}</span>
+{% elif c.estado == 'aprobado' %}
+<button type="button" class="btn btn-sm btn-outline-primary" onclick="copiarLinkMayorista('{{ c.email }}')" title="Compartir link del catalogo">
+<i class="bi bi-share"></i>
+</button>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+{% else %}
+<div class="card shadow-sm"><div class="card-body text-center py-5">
+<i class="bi bi-people fs-1 text-muted"></i>
+<p class="text-muted mt-3 mb-0">No hay cuentas en este estado.</p>
+</div></div>
+{% endif %}
+
+<!-- Modal rechazar -->
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<form id="rechazar-form" method="post">
+<div class="modal-header"><h6 class="modal-title">Rechazar cuenta de <span id="rechazar-nombre"></span></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<p class="small text-muted">Se le enviara un email al mayorista avisandole del rechazo.</p>
+<div class="mb-2"><label class="form-label">Motivo (opcional)</label>
+<textarea name="motivo" class="form-control" rows="3" placeholder="Ej: CUIT invalido"></textarea></div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="submit" class="btn btn-danger">Rechazar</button>
+</div>
+</form></div></div></div>
+
+<script>
+function openRechazar(id, nombre) {
+  document.getElementById('rechazar-form').action = '/b2b/cuenta/' + id + '/rechazar';
+  document.getElementById('rechazar-nombre').textContent = nombre;
+  new bootstrap.Modal(document.getElementById('rechazarModal')).show();
+}
+
+function copiarLinkCatalogo() {
+  const link = window.location.origin + '/catalogo';
+  navigator.clipboard.writeText(link).then(() => {
+    alert('Link copiado al portapapeles:\n\n' + link + '\n\nPodes pegarlo en WhatsApp, email, redes sociales, etc.');
+  }).catch(err => {
+    prompt('Copia este link manualmente:', link);
+  });
+}
+
+function copiarLinkMayorista(email) {
+  const link = window.location.origin + '/catalogo/registro';
+  const texto = 'Hola! Te comparto el catalogo de Familia Zaragoza ®. Podes registrarte como mayorista en:\n\n' + link;
+  navigator.clipboard.writeText(texto).then(() => {
+    alert('Mensaje copiado. Podes enviarselo a ' + email + ' por WhatsApp o email.');
+  }).catch(err => {
+    prompt('Copia este mensaje manualmente:', texto);
+  });
+}
+</script>
+{% endblock %}

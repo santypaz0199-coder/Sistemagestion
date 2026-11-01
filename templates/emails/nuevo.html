@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Redactar correo{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Redactar correo</h4>
+<div class="text-muted small">Se envia de inmediato al destinatario</div>
+</div>
+<a href="{{ url_for('emails_historial') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card shadow-sm"><div class="card-body">
+<form method="post" enctype="multipart/form-data">
+<div class="row g-3">
+
+<div class="col-md-6">
+<label class="form-label">Destinatario *</label>
+<div class="input-group">
+<select id="cliente-select" class="form-select">
+<option value="">-- Elegir cliente o escribir abajo --</option>
+{% for c in clientes %}
+<option value="{{ c.email }}">{{ c.nombre_completo }} &lt;{{ c.email }}&gt;</option>
+{% endfor %}
+</select>
+</div>
+<input name="destinatario" id="dest-input" type="email" class="form-control mt-2" placeholder="email@ejemplo.com" required>
+<div class="form-text">Podes elegir un cliente (autocompleta) o escribir directo.</div>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Enviar desde</label>
+{% if current_user.es_admin %}
+<select name="remitente_email" class="form-select">
+{% for r in remitentes %}
+<option value="{{ r.email }}">{{ r.label }} · {{ r.email }}</option>
+{% endfor %}
+</select>
+<div class="form-text">El cliente vera este nombre como remitente.</div>
+{% else %}
+{% if remitentes %}
+{% set r = remitentes[0] %}
+<div class="form-control-plaintext">
+<span class="badge bg-secondary">{{ r.nombre }}</span> &lt;{{ r.email }}&gt;
+</div>
+<div class="form-text">Se envia desde tu correo asignado. Pedile al admin si necesitas cambiarlo.</div>
+{% else %}
+<div class="alert alert-warning py-2 small mb-0">No tenes correo remitente asignado. Pedile al admin.</div>
+{% endif %}
+{% endif %}
+</div>
+
+<div class="col-12">
+<label class="form-label">Asunto *</label>
+<input name="asunto" class="form-control" required placeholder="Ej: Consulta sobre tu pedido">
+</div>
+
+<div class="col-12">
+<label class="form-label">Cuerpo *</label>
+<textarea name="cuerpo" class="form-control" rows="10" required placeholder="Escribi el mensaje..."></textarea>
+</div>
+
+<div class="col-12">
+<label class="form-label">Adjunto (opcional)</label>
+<input type="file" name="adjunto" class="form-control">
+<div class="form-text">Cualquier archivo. Max 10 MB.</div>
+</div>
+
+</div>
+<div class="mt-4 d-flex gap-2">
+<button class="btn btn-dark"><i class="bi bi-send"></i> Enviar correo</button>
+<a href="{{ url_for('emails_historial') }}" class="btn btn-outline-secondary">Cancelar</a>
+</div>
+</form>
+</div></div>
+
+<script>
+document.getElementById('cliente-select').addEventListener('change', function() {
+  if (this.value) {
+    document.getElementById('dest-input').value = this.value;
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}SMTP{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Servidor de correo (SMTP)</h4>
+<a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<div class="row g-3">
+<div class="col-md-7"><div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="row g-3">
+<div class="col-md-8"><label class="form-label">Host *</label><input name="smtp_host" class="form-control" value="{{ cfg.smtp_host }}" placeholder="ej: xxx.ipzmarketing.com"></div>
+<div class="col-md-4"><label class="form-label">Puerto</label><input name="smtp_puerto" class="form-control" value="{{ cfg.smtp_puerto }}"></div>
+<div class="col-md-6"><label class="form-label">Usuario *</label><input name="smtp_usuario" class="form-control" value="{{ cfg.smtp_usuario }}"></div>
+<div class="col-md-6"><label class="form-label">Contraseña *</label><input type="password" name="smtp_password" class="form-control" value="{{ cfg.smtp_password }}"></div>
+<div class="col-md-6"><label class="form-label">Email remitente</label><input name="smtp_remitente_email" class="form-control" value="{{ cfg.smtp_remitente_email }}"></div>
+<div class="col-md-6"><label class="form-label">Nombre remitente</label><input name="smtp_remitente_nombre" class="form-control" value="{{ cfg.smtp_remitente_nombre }}"></div>
+<div class="col-md-6"><label class="form-label">Seguridad</label><select name="smtp_seguridad" class="form-select">
+<option value="tls" {% if cfg.smtp_seguridad=='tls' %}selected{% endif %}>TLS (587)</option>
+<option value="ssl" {% if cfg.smtp_seguridad=='ssl' %}selected{% endif %}>SSL (465)</option>
+</select></div>
+</div>
+<div class="mt-4"><button class="btn btn-dark">Guardar</button></div>
+</form>
+</div></div></div>
+<div class="col-md-5"><div class="card shadow-sm"><div class="card-body">
+<h6>Probar conexion</h6>
+<p class="text-muted small">Guarda primero los datos arriba y despues proba.</p>
+<form method="post">
+<input type="hidden" name="accion" value="probar">
+<div class="mb-2"><label class="form-label">Enviar prueba a</label><input name="probar_destino" type="email" class="form-control" required></div>
+<button class="btn btn-outline-primary"><i class="bi bi-send"></i> Enviar prueba</button>
+</form>
+</div></div></div>
+</div>
+{% endblock %}

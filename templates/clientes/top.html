@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Top clientes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div>
+<h4 class="mb-1">Top clientes</h4>
+<div class="text-muted small">{{ ini }} al {{ fin }}</div>
+</div>
+<a href="{{ url_for('clientes_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-pills mb-3">
+<li class="nav-item"><a class="nav-link {% if tab=='facturacion' %}active{% endif %}" href="{{ url_for('clientes_top', tab='facturacion', periodo=periodo) }}"><i class="bi bi-currency-dollar"></i> Por facturacion</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='ordenes' %}active{% endif %}" href="{{ url_for('clientes_top', tab='ordenes', periodo=periodo) }}"><i class="bi bi-receipt"></i> Por ordenes</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='kilos' %}active{% endif %}" href="{{ url_for('clientes_top', tab='kilos', periodo=periodo) }}"><i class="bi bi-box-seam"></i> Por kilos</a></li>
+</ul>
+
+<!-- Filtro periodo -->
+<form class="card shadow-sm p-3 mb-3">
+<input type="hidden" name="tab" value="{{ tab }}">
+<div class="row g-2 align-items-end">
+<div class="col-md-3">
+<label class="form-label small text-muted">Periodo</label>
+<select name="periodo" class="form-select form-select-sm" onchange="this.form.submit()">
+<option value="mes" {% if periodo=='mes' %}selected{% endif %}>Este mes</option>
+<option value="trimestre" {% if periodo=='trimestre' %}selected{% endif %}>Últimos 90 días</option>
+<option value="anio" {% if periodo=='anio' %}selected{% endif %}>Este año</option>
+<option value="todo" {% if periodo=='todo' %}selected{% endif %}>Todo el historial</option>
+</select>
+</div>
+</div>
+</form>
+
+{% if ranking %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr>
+<th width="60">#</th><th>Cliente</th><th>Provincia</th><th>Contacto</th>
+<th class="text-end">{{ metrica_label }}</th><th class="text-end">Ordenes</th><th class="text-end"></th>
+</tr></thead>
+<tbody>
+{% for c in ranking %}
+<tr>
+<td>
+{% if loop.index == 1 %}<span class="badge" style="background:#fbbf24;color:#78350f;font-size:.9rem;">🥇 1</span>
+{% elif loop.index == 2 %}<span class="badge" style="background:#d1d5db;color:#374151;font-size:.9rem;">🥈 2</span>
+{% elif loop.index == 3 %}<span class="badge" style="background:#fbbf24;color:#78350f;font-size:.85rem;opacity:.85;">🥉 3</span>
+{% else %}<span class="text-muted fw-semibold">{{ loop.index }}</span>{% endif %}
+</td>
+<td><a href="{{ url_for('clientes_editar', id=c.id) }}" class="text-decoration-none fw-semibold">{{ c.nombre_completo }}</a></td>
+<td class="small">{{ c.provincia_nombre or '—' }}</td>
+<td class="small">
+{% if c.telefono %}<i class="bi bi-telephone text-muted"></i> {{ c.telefono }}{% endif %}
+{% if c.email and c.telefono %} · {% endif %}
+{% if c.email %}<span class="text-truncate">{{ c.email }}</span>{% endif %}
+</td>
+<td class="text-end fw-semibold">
+{% if tab == 'facturacion' %}${{ '{:,.2f}'.format(c.metrica) }}
+{% elif tab == 'kilos' %}{{ '{:,.2f}'.format(c.metrica) }} kg
+{% else %}{{ c.metrica }}
+{% endif %}
+</td>
+<td class="text-end text-muted">{{ c.num_ordenes }}</td>
+<td class="text-end"><a href="{{ url_for('clientes_editar', id=c.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>
+</tr>
+{% endfor %}
+</tbody></table></div></div>
+{% else %}
+<div class="card shadow-sm"><div class="card-body text-center py-5">
+<i class="bi bi-people fs-1 text-muted"></i>
+<h5 class="mt-3">Sin datos</h5>
+<p class="text-muted mb-0">No hay clientes con compras en el periodo seleccionado.</p>
+</div></div>
+{% endif %}
+{% endblock %}

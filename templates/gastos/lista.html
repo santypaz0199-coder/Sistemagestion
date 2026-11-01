@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Gastos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Gastos</h4>
+<div class="d-flex gap-2">
+<a href="{{ url_for('gastos_nuevo') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg"></i> Nuevo gasto</a>
+<a href="{{ url_for('compras_nueva') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg"></i> Nueva compra</a>
+<a href="{{ url_for('proveedores_nuevo') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus-lg"></i> Nuevo proveedor</a>
+</div>
+</div>
+
+<!-- Stats compactas -->
+<style>
+.stats-compact-gastos{ display:flex; gap:8px; margin-bottom:1rem; flex-wrap:wrap; }
+.stats-compact-gastos .stat-pill{ display:flex; align-items:center; gap:8px; padding:10px 16px; background:#fff; border-radius:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); color:inherit; border-left:3px solid #6b7280; flex:1; min-width:200px; }
+.stats-compact-gastos .stat-icon{ width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
+.stats-compact-gastos .stat-body{ display:flex; flex-direction:column; line-height:1.2; }
+.stats-compact-gastos .stat-label{ font-size:.7rem; color:#6b7280; font-weight:500; }
+.stats-compact-gastos .stat-value{ font-size:1.05rem; font-weight:700; letter-spacing:-.01em; }
+.stats-compact-gastos .stat-delta{ font-size:.68rem; font-weight:600; margin-left:.3rem; }
+</style>
+
+<div class="stats-compact-gastos">
+<div class="stat-pill" style="border-left-color:#ef4444;">
+<div class="stat-icon" style="background:#fef2f2;color:#ef4444;"><i class="bi bi-wallet2"></i></div>
+<div class="stat-body">
+<span class="stat-label">Gastos del mes</span>
+<span class="stat-value">${{ '{:,.0f}'.format(stats.gastos_mes).replace(',','.') }}
+{% if stats.var_gastos is not none %}
+<span class="stat-delta {% if stats.var_gastos > 0 %}text-danger{% else %}text-success{% endif %}">{{ '%+.0f'|format(stats.var_gastos) }}%</span>
+{% endif %}
+</span>
+</div>
+</div>
+<div class="stat-pill" style="border-left-color:#f59e0b;">
+<div class="stat-icon" style="background:#fffbeb;color:#f59e0b;"><i class="bi bi-bag"></i></div>
+<div class="stat-body">
+<span class="stat-label">Compras del mes</span>
+<span class="stat-value">${{ '{:,.0f}'.format(stats.compras_mes).replace(',','.') }}
+{% if stats.var_compras is not none %}
+<span class="stat-delta {% if stats.var_compras > 0 %}text-danger{% else %}text-success{% endif %}">{{ '%+.0f'|format(stats.var_compras) }}%</span>
+{% endif %}
+</span>
+</div>
+</div>
+<div class="stat-pill" style="border-left-color:#1f2937;">
+<div class="stat-icon" style="background:#f3f4f6;color:#1f2937;"><i class="bi bi-calculator"></i></div>
+<div class="stat-body">
+<span class="stat-label">Total egresos del mes</span>
+<span class="stat-value">${{ '{:,.0f}'.format(stats.total_mes).replace(',','.') }}
+{% if stats.var_total is not none %}
+<span class="stat-delta {% if stats.var_total > 0 %}text-danger{% else %}text-success{% endif %}">{{ '%+.0f'|format(stats.var_total) }}%</span>
+{% endif %}
+</span>
+</div>
+</div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-pills mb-3">
+<li class="nav-item"><a class="nav-link {% if tab=='gastos' %}active{% endif %}" href="{{ url_for('gastos_lista', tab='gastos') }}"><i class="bi bi-receipt"></i> Gastos generales</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='compras' %}active{% endif %}" href="{{ url_for('gastos_lista', tab='compras') }}"><i class="bi bi-bag"></i> Compras de stock</a></li>
+<li class="nav-item"><a class="nav-link {% if tab=='proveedores' %}active{% endif %}" href="{{ url_for('gastos_lista', tab='proveedores') }}"><i class="bi bi-people"></i> Proveedores</a></li>
+</ul>
+
+{% if tab == 'gastos' %}
+<form class="card shadow-sm p-3 mb-3"><div class="row g-2 align-items-end">
+<div class="col-md-3"><label class="form-label small text-muted">Desde</label><input type="date" name="desde" value="{{ desde }}" class="form-control form-control-sm"></div>
+<div class="col-md-3"><label class="form-label small text-muted">Hasta</label><input type="date" name="hasta" value="{{ hasta }}" class="form-control form-control-sm"></div>
+<div class="col-md-4"><label class="form-label small text-muted">Categoria</label><select name="categoria" class="form-select form-select-sm"><option value="">Todas</option>{% for c in categorias %}<option value="{{ c.id }}" {% if cat_filtro==c.id|string %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-search"></i> Filtrar</button></div>
+<input type="hidden" name="tab" value="gastos">
+</div></form>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr><th>Fecha</th><th>Categoria</th><th>Descripcion</th><th>Usuario</th><th class="text-end">Monto</th><th class="text-end"></th></tr></thead>
+<tbody>
+{% for g in gastos %}
+<tr>
+<td class="small">{{ g.fecha }}</td>
+<td>{{ g.categoria_nombre or '-' }}</td>
+<td>{{ g.descripcion or '' }}</td>
+<td class="small">{{ g.usuario_nombre }}</td>
+<td class="text-end">${{ '%.2f'|format(g.monto) }}</td>
+<td class="text-end text-nowrap">
+<a href="{{ url_for('gastos_editar', id=g.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+<form method="post" action="{{ url_for('gastos_eliminar', id=g.id) }}" class="d-inline" onsubmit="return confirm('Eliminar?')"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+</td>
+</tr>
+{% else %}<tr><td colspan="6" class="text-center text-muted py-4">Sin gastos.</td></tr>{% endfor %}
+</tbody></table></div></div>
+
+{% elif tab == 'compras' %}
+<form class="card shadow-sm p-3 mb-3"><div class="row g-2 align-items-end">
+<div class="col-md-3"><label class="form-label small text-muted">Desde</label><input type="date" name="desde" value="{{ desde }}" class="form-control form-control-sm"></div>
+<div class="col-md-3"><label class="form-label small text-muted">Hasta</label><input type="date" name="hasta" value="{{ hasta }}" class="form-control form-control-sm"></div>
+<div class="col-md-4"><label class="form-label small text-muted">Proveedor</label><select name="proveedor" class="form-select form-select-sm"><option value="">Todos</option>{% for p in proveedores_lista %}<option value="{{ p.id }}" {% if prov_filtro==p.id|string %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-search"></i> Filtrar</button></div>
+<input type="hidden" name="tab" value="compras">
+</div></form>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Proveedor</th><th>Usuario</th><th class="text-end">Total</th></tr></thead>
+<tbody>
+{% for c in compras %}
+<tr>
+<td class="fw-semibold">{{ c.id }}</td>
+<td class="small">{{ c.fecha }}</td>
+<td>{% if c.tipo == 'insumo' %}<span class="badge bg-secondary">Insumo</span>{% else %}<span class="badge bg-success">Stock</span>{% endif %}</td>
+<td>{{ c.proveedor_nombre or '—' }}</td>
+<td class="small">{{ c.usuario_nombre }}</td>
+<td class="text-end">${{ '%.2f'|format(c.total) }}</td>
+</tr>
+{% else %}<tr><td colspan="6" class="text-center text-muted py-4">Sin compras.</td></tr>{% endfor %}
+</tbody></table></div></div>
+
+{% else %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr><th>Nombre</th><th>CUIT</th><th>Contacto</th><th>Telefono</th><th>Email</th><th class="text-end">Acciones</th></tr></thead>
+<tbody>
+{% for p in proveedores %}
+<tr>
+<td class="fw-semibold">{{ p.nombre }}</td>
+<td class="small">{{ p.cuit or '' }}</td>
+<td>{{ p.contacto or '' }}</td>
+<td>{{ p.telefono or '' }}</td>
+<td class="small">{{ p.email or '' }}</td>
+<td class="text-end text-nowrap">
+<a href="{{ url_for('proveedores_editar', id=p.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+<form method="post" action="{{ url_for('proveedores_eliminar', id=p.id) }}" class="d-inline" onsubmit="return confirm('Desactivar?')"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+</td>
+</tr>
+{% else %}<tr><td colspan="6" class="text-center text-muted py-4">Sin proveedores.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endif %}
+{% endblock %}

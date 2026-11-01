@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Gastos fijos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<div>
+<h4 class="mb-1">Gastos fijos de {{ mes_label }} {{ anio }}</h4>
+<div class="text-muted small">Total: <strong>${{ '{:,.0f}'.format(gastos_fijos_total).replace(',', '.') }}</strong> · Se usan para el punto de equilibrio</div>
+</div>
+<a href="{{ url_for('objetivos_lista', mes=mes, anio=anio) }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-plus-circle"></i> Nuevo gasto fijo</h6>
+<form method="post">
+<input type="hidden" name="mes" value="{{ mes }}">
+<input type="hidden" name="anio" value="{{ anio }}">
+<div class="mb-2">
+<label class="form-label small">Descripcion *</label>
+<input name="descripcion" class="form-control" required placeholder="Ej: Sueldo contador">
+</div>
+<div class="mb-2">
+<label class="form-label small">Monto *</label>
+<input type="number" step="0.01" min="0" name="monto" class="form-control" required placeholder="0">
+</div>
+<div class="mb-2">
+<label class="form-label small">Categoria</label>
+<select name="categoria_id" class="form-select">
+<option value="">— Sin categoria —</option>
+{% for c in categorias %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+</select>
+</div>
+<div class="mb-3">
+<label class="form-label small">Fecha</label>
+<input type="date" name="fecha" class="form-control" value="{{ '%04d-%02d-01'|format(anio, mes) }}">
+</div>
+<button class="btn btn-dark w-100">Guardar gasto fijo</button>
+</form>
+</div></div>
+</div>
+
+<div class="col-md-8">
+<div class="card shadow-sm"><div class="card-body">
+<h6 class="mb-3"><i class="bi bi-list-check"></i> Gastos fijos del mes</h6>
+{% if gastos_fijos %}
+<table class="table table-sm mb-0">
+<thead class="table-light"><tr><th>Fecha</th><th>Descripcion</th><th>Categoria</th><th class="text-end">Monto</th><th></th></tr></thead>
+<tbody>
+{% for g in gastos_fijos %}
+<tr>
+<td class="small">{{ g.fecha }}</td>
+<td>{{ g.descripcion }}</td>
+<td class="small text-muted">{{ g.categoria_nombre or '—' }}</td>
+<td class="text-end fw-semibold">${{ '{:,.0f}'.format(g.monto).replace(',', '.') }}</td>
+<td class="text-end">
+<form method="post" action="{{ url_for('objetivos_gasto_fijo_toggle', id=g.id) }}" class="d-inline">
+<button class="btn btn-sm btn-outline-danger" title="Quitar de fijos"><i class="bi bi-x"></i></button>
+</form>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+<tfoot class="table-light">
+<tr><td colspan="3" class="text-end fw-semibold">Total:</td><td class="text-end fw-semibold">${{ '{:,.0f}'.format(gastos_fijos_total).replace(',', '.') }}</td><td></td></tr>
+</tfoot>
+</table>
+{% else %}
+<div class="text-center py-4">
+<i class="bi bi-wallet2 fs-1 text-muted"></i>
+<p class="text-muted mt-2 mb-0">No hay gastos fijos cargados para este mes.</p>
+<p class="small text-muted">Cargalos a la izquierda o marca gastos existentes como fijos desde <a href="{{ url_for('gastos_lista') }}">Gastos</a>.</p>
+</div>
+{% endif %}
+</div></div>
+</div>
+</div>
+{% endblock %}

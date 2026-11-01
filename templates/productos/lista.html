@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">Productos</h4>
+<div class="d-flex gap-2 flex-wrap">
+<a href="{{ url_for('productos_ranking') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-trophy"></i> Ranking</a>
+<a href="{{ url_for('catalogo_pdf_seleccionar') }}" class="btn btn-outline-danger btn-sm"><i class="bi bi-file-earmark-pdf"></i> Crear Catálogo PDF</a>
+<a href="{{ url_for('productos_reservados') }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-hourglass-split"></i> Reservados</a>
+<a href="{{ url_for('productos_categorias') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-tags"></i> Categorias</a>
+<a href="{{ url_for('productos_nuevo') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg"></i> Nuevo producto</a>
+</div>
+</div>
+
+<!-- Stats compactas -->
+<style>
+.stats-compact-productos{ display:flex; gap:8px; margin-bottom:1rem; flex-wrap:wrap; }
+.stats-compact-productos .stat-pill{ display:flex; align-items:center; gap:8px; padding:8px 14px; background:#fff; border-radius:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); text-decoration:none; color:inherit; border-left:3px solid #6b7280; flex:1; min-width:120px; transition:box-shadow .15s; }
+.stats-compact-productos .stat-pill:hover{ box-shadow:0 4px 12px rgba(16,24,40,.08); color:inherit; }
+.stats-compact-productos .stat-icon{ width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.8rem; flex-shrink:0; }
+.stats-compact-productos .stat-body{ display:flex; flex-direction:column; line-height:1.15; min-width:0; }
+.stats-compact-productos .stat-label{ font-size:.65rem; color:#6b7280; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stats-compact-productos .stat-value{ font-size:.95rem; font-weight:700; letter-spacing:-.01em; }
+</style>
+
+<div class="stats-compact-productos">
+<div class="stat-pill" style="border-left-color:#3b5bdb;">
+<div class="stat-icon" style="background:#eef2ff;color:#3b5bdb;"><i class="bi bi-box-seam"></i></div>
+<div class="stat-body">
+<span class="stat-label">Total</span>
+<span class="stat-value">{{ stats.total }}</span>
+</div>
+</div>
+<a href="{{ url_for('productos_lista', alerta='sin_foto') }}" class="stat-pill" style="border-left-color:#f59e0b;">
+<div class="stat-icon" style="background:#fffbeb;color:#f59e0b;"><i class="bi bi-image"></i></div>
+<div class="stat-body">
+<span class="stat-label">Sin foto</span>
+<span class="stat-value">{{ stats.sin_foto }}</span>
+</div>
+</a>
+<a href="{{ url_for('productos_lista', alerta='sin_precio') }}" class="stat-pill" style="border-left-color:#ef4444;">
+<div class="stat-icon" style="background:#fef2f2;color:#ef4444;"><i class="bi bi-currency-dollar"></i></div>
+<div class="stat-body">
+<span class="stat-label">Sin precio</span>
+<span class="stat-value">{{ stats.sin_precio }}</span>
+</div>
+</a>
+<a href="{{ url_for('productos_lista', alerta='agotado') }}" class="stat-pill" style="border-left-color:#6b7280;">
+<div class="stat-icon" style="background:#f3f4f6;color:#6b7280;"><i class="bi bi-x-circle"></i></div>
+<div class="stat-body">
+<span class="stat-label">Agotados</span>
+<span class="stat-value">{{ stats.agotados }}</span>
+</div>
+</a>
+<a href="{{ url_for('productos_reservados') }}" class="stat-pill" style="border-left-color:#06b6d4;">
+<div class="stat-icon" style="background:#ecfeff;color:#06b6d4;"><i class="bi bi-hourglass-split"></i></div>
+<div class="stat-body">
+<span class="stat-label">Reservados</span>
+<span class="stat-value">{{ stats.reservados }}</span>
+</div>
+</a>
+</div>
+
+<form class="card shadow-sm p-3 mb-3"><div class="row g-2 align-items-end">
+<div class="col-md-4"><label class="form-label small text-muted">Buscar</label><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="SKU o nombre"></div>
+<div class="col-md-3"><label class="form-label small text-muted">Categoria</label>
+<select name="categoria" class="form-select form-select-sm">
+<option value="">Todas</option>
+{% for p in padres %}
+<option value="{{ p.id }}" {% if categoria_id==p.id|string %}selected{% endif %}>{{ p.nombre }}</option>
+{% for h in hijos.get(p.id, []) %}
+<option value="{{ h.id }}" {% if categoria_id==h.id|string %}selected{% endif %}>&nbsp;&nbsp;— {{ h.nombre }}</option>
+{% endfor %}
+{% endfor %}
+</select></div>
+<div class="col-md-3"><label class="form-label small text-muted">Alerta</label>
+<select name="alerta" class="form-select form-select-sm">
+<option value="">Todas</option>
+<option value="sin_foto" {% if alerta=='sin_foto' %}selected{% endif %}>Sin foto</option>
+<option value="sin_precio" {% if alerta=='sin_precio' %}selected{% endif %}>Sin precio</option>
+<option value="agotado" {% if alerta=='agotado' %}selected{% endif %}>Agotados</option>
+<option value="bajo_stock" {% if alerta=='bajo_stock' %}selected{% endif %}>Bajo stock</option>
+<option value="reservado" {% if alerta=='reservado' %}selected{% endif %}>Reservados</option>
+</select></div>
+<div class="col-md-2"><button class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-search"></i> Filtrar</button></div>
+</div></form>
+
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+<thead class="table-light"><tr>
+<th width="60">Foto</th><th>SKU</th><th>Nombre</th><th>Categoria</th>
+<th class="text-end">Precio</th><th class="text-end">Stock</th><th>Estado</th>
+<th class="text-muted small">Creado</th><th class="text-end">Acciones</th>
+</tr></thead>
+<tbody>
+{% for p in productos %}
+<tr>
+<td>
+{% if p.foto %}
+<img src="{{ url_for('productos_ver_foto', nombre=p.foto) }}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;">
+{% else %}
+<div style="width:44px;height:44px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;"><i class="bi bi-image"></i></div>
+{% endif %}
+</td>
+<td class="text-muted small">{{ p.sku or '' }}</td>
+<td class="fw-semibold">{{ p.nombre }}{% if p.tiene_costo_variable %} <span class="badge bg-light text-dark border costo-variable-badge" style="font-size:.65rem;" title="Costo variable: ${{ '%.2f'|format(p.costo_variable_unitario or 0) }}"><i class="bi bi-box"></i> +${{ '%g'|format(p.costo_variable_unitario or 0) }}</span>{% endif %}</td>
+<td class="small">{% if p.parent_nombre %}{{ p.parent_nombre }} › {% endif %}{{ p.categoria_nombre or '—' }}</td>
+<td class="text-end">{% if p.precio and p.precio > 0 %}${{ '%.2f'|format(p.precio) }}{% else %}<span class="text-danger small">Sin precio</span>{% endif %}</td>
+<td class="text-end">
+{% if p.stock_actual <= 0 %}<span class="badge bg-secondary">Agotado</span>
+{% elif p.stock_minimo > 0 and p.stock_actual <= p.stock_minimo %}<span class="badge bg-danger">{{ '%g'|format(p.stock_actual) }}</span>
+{% else %}<span class="badge bg-success">{{ '%g'|format(p.stock_actual) }}</span>{% endif %}
+</td>
+<td class="small text-muted">
+{% if not p.foto %}<span class="badge bg-warning text-dark">Sin foto</span>{% endif %}
+{% if not p.precio or p.precio == 0 %}<span class="badge bg-danger">Sin precio</span>{% endif %}
+</td>
+<td class="small text-muted">{{ p.creado[:10] if p.creado else '' }}</td>
+<td class="text-end text-nowrap">
+<a href="{{ url_for('productos_editar', id=p.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+{% if current_user.es_admin %}
+<a href="{{ url_for('productos_ajuste', id=p.id) }}" class="btn btn-sm btn-outline-primary" title="Ajustar stock"><i class="bi bi-sliders"></i></a>
+{% endif %}
+<button type="button" class="btn btn-sm btn-outline-danger" onclick="openBorrarProducto({{ p.id }}, '{{ p.nombre }}')" title="Borrar"><i class="bi bi-trash"></i></button>
+</td>
+</tr>
+{% else %}
+<tr><td colspan="9" class="text-center text-muted py-4">Sin productos.</td></tr>
+{% endfor %}
+</tbody></table></div></div>
+
+<div class="modal fade" id="borrarProductoModal" tabindex="-1">
+<div class="modal-dialog"><div class="modal-content">
+<form id="borrar-producto-form" method="post">
+<div class="modal-header"><h6 class="modal-title">Borrar producto <span id="borrar-producto-nombre"></span></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+{% if current_user.es_admin %}
+<div class="alert alert-warning py-2 small mb-3"><i class="bi bi-exclamation-triangle"></i> Como admin, el producto se desactiva inmediatamente.</div>
+{% else %}
+<div class="alert alert-info py-2 small mb-3"><i class="bi bi-info-circle"></i> Se enviara una <strong>solicitud al admin</strong>.</div>
+{% endif %}
+<div class="mb-2"><label class="form-label">Motivo (opcional)</label><textarea name="motivo" class="form-control" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="submit" class="btn btn-danger">{% if current_user.es_admin %}Borrar{% else %}Enviar solicitud{% endif %}</button>
+</div>
+</form></div></div></div>
+
+<script>
+function openBorrarProducto(id, nombre) {
+  document.getElementById('borrar-producto-form').action = '/productos/' + id + '/borrar';
+  document.getElementById('borrar-producto-nombre').textContent = nombre;
+  new bootstrap.Modal(document.getElementById('borrarProductoModal')).show();
+}
+</script>
+{% endblock %}

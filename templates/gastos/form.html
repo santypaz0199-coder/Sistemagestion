@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Gasto{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h4 class="mb-0">{{ 'Editar' if gasto else 'Nuevo' }} gasto</h4>
+<a href="{{ url_for('gastos_lista') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+<div class="card shadow-sm"><div class="card-body">
+<form method="post">
+<div class="row g-3">
+<div class="col-md-3"><label class="form-label">Fecha *</label><input type="date" name="fecha" class="form-control" required value="{{ gasto.fecha if gasto else hoy }}"></div>
+<div class="col-md-3"><label class="form-label">Categoria</label><select name="categoria_id" class="form-select"><option value="">--</option>{% for c in categorias %}<option value="{{ c.id }}" {% if gasto and gasto.categoria_id==c.id %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}</select></div>
+<div class="col-md-6"><label class="form-label">Monto *</label><input type="number" step="0.01" min="0" name="monto" class="form-control" required value="{{ gasto.monto if gasto else '' }}"></div>
+<div class="col-12"><label class="form-label">Descripcion</label><input name="descripcion" class="form-control" value="{{ gasto.descripcion if gasto else '' }}"></div>
+</div>
+<div class="col-12">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" name="es_fijo" id="es_fijo" value="1" {% if gasto and gasto.es_fijo %}checked{% endif %}>
+<label class="form-check-label" for="es_fijo"><strong>Es gasto fijo</strong> (se usa para el punto de equilibrio)</label>
+</div>
+</div>
+<div class="mt-4"><button class="btn btn-dark">Guardar</button></div>
+</form></div></div>
+{% endblock %}
